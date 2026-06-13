@@ -1,26 +1,96 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  /* 🎨 Core Colors (Light Mode) */
+  --color-background: theme(colors.white); /* Pure white background */
+  --color-foreground: theme(colors.slate.950);
+
+  --color-primary: theme(colors.indigo.900);
+  --color-primary-foreground: theme(colors.white);
+
+  --color-secondary: theme(colors.slate.200);
+  --color-secondary-foreground: theme(colors.slate.800);
+
+  --color-muted: theme(colors.slate.100);
+  --color-muted-foreground: theme(colors.slate.500);
+
+  --color-accent: theme(colors.teal.600);
+  --color-border: theme(colors.slate.200);
+
+  /* 🟢 Lifecycle Status Colors */
+  --color-success: theme(colors.emerald.500);
+  --color-warning: theme(colors.amber.500);
+  --color-error: theme(colors.red.500);
+
+  /* 📏 Border Radius */
+  --radius-4xl: 2rem;
+  --radius-lg: 0.5rem;
+  --radius-md: calc(0.5rem - 2px);
+  --radius-sm: calc(0.5rem - 4px);
+
+  /* 🎭 Custom Animations */
+  @keyframes spotlight {
+    0% {
+      opacity: 0;
+      transform: translate(-72%, -62%) scale(0.5);
+    }
+    100% {
+      opacity: 1;
+      transform: translate(-50%, -40%) scale(1);
+    }
+  }
+  --animate-spotlight: spotlight 2s ease 0.75s 1 forwards;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+/* 🌙 Dark Mode Theme Variables */
+@variant dark (&:where(.dark, .dark *));
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  .dark {
+    --color-background: theme(colors.black);
+    --color-foreground: theme(colors.slate.50);
+
+    --color-primary: theme(colors.indigo.200);
+    --color-primary-foreground: theme(colors.slate.950);
+
+    --color-secondary: theme(colors.slate.900);
+    --color-secondary-foreground: theme(colors.slate.300);
+
+    --color-muted: theme(colors.slate.800);
+    --color-muted-foreground: theme(colors.slate.400);
+
+    --color-accent: theme(colors.teal.400);
+    --color-border: theme(colors.slate.700);
+
+    --color-success: theme(colors.emerald.400);
+    --color-warning: theme(colors.amber.400);
+    --color-error: theme(colors.red.400);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* 🛠️ Global Resets & Scrollbar */
+@layer base {
+  * {
+    @apply border-border outline-none;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  /* Premium Minimalist Scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    @apply bg-slate-300 rounded-full;
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    @apply bg-slate-700;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-slate-400 dark:bg-slate-600;
+  }
 }
