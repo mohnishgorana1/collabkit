@@ -2,7 +2,8 @@ import mongoose, { Document, models, Schema } from "mongoose";
 
 export interface IWorkspace extends Document {
   name: string;
-  slug: string; // URL ke liye e.g., collabkit.com/w/acme-corp
+  publicId: string;
+  slug: string; // URL ke liye e.g., collabkit.com/w/publicid/acme-corp
   logoUrl?: string;
   description?: string;
   ownerId: mongoose.Types.ObjectId;
@@ -45,10 +46,16 @@ export interface IWorkspace extends Document {
 const workspaceSchema = new Schema<IWorkspace>(
   {
     name: { type: String, required: true, trim: true },
+    publicId: {
+      type: String,
+      required: true,
+      unique: true, // 💡 Yeh hamesha unique rahega
+      index: true,
+    },
     slug: {
       type: String,
       required: true,
-      unique: true,
+      unique: false,
       lowercase: true,
       trim: true,
       index: true,
@@ -109,7 +116,6 @@ const workspaceSchema = new Schema<IWorkspace>(
 
 // Indexes for faster querying
 workspaceSchema.index({ "settings.allowedEmailDomains": 1 });
-workspaceSchema.index({ stripeCustomerId: 1 });
 
 const Workspace =
   models?.Workspace || mongoose.model<IWorkspace>("Workspace", workspaceSchema);

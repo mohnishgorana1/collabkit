@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Building2, Link as LinkIcon, AlertCircle, Loader2 } from "lucide-react";
 import axios from 'axios'
 import toast from "react-hot-toast";
+
 export default function WorkspaceActions() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"create" | "join">("create");
@@ -18,9 +19,6 @@ export default function WorkspaceActions() {
 
     const formData = new FormData(e.currentTarget);
 
-
-
-    // Form se saara data nikal rahe hain
     const payload = {
       name: formData.get("name") as string,
       description: formData.get("description") as string,
@@ -28,21 +26,17 @@ export default function WorkspaceActions() {
       industry: formData.get("industry") as string,
       companySize: formData.get("companySize") as string,
       website: formData.get("website") as string,
-      allowAnyoneToJoin: formData.get("allowAnyoneToJoin") === "on", // Checkbox logic
+      allowAnyoneToJoin: formData.get("allowAnyoneToJoin") === "on", 
     };
-
-    console.log("formdata", payload)
-
 
     try {
       const res = await axios.post("/api/workspace/create", payload);
       if (res.data.success) {
         toast.success("Workspace created successfully! 🚀");
-        router.push("/dashboard"); // Redirect to dashboard
+        // ✅ Smart Redirect: Direct naye workspace me bhejo
+        router.push(`/workspace/${res.data.publicId}/${res.data.slug}`); 
       }
-      console.log("res", res)
     } catch (err: any) {
-      // ✅ Axios specific error handling
       const errorMessage = err.response?.data?.error || err.message || "Failed to create workspace";
       setError(errorMessage);
       toast.error(errorMessage);
@@ -63,6 +57,8 @@ export default function WorkspaceActions() {
 
       if (res.data.success) {
         toast.success("Joined workspace successfully! 🎉");
+        // Agar join API publicId aur slug return kar rahi hai, toh direct waha bhej sakte ho. 
+        // Varna dashboard bhejna bhi theek hai.
         router.push("/dashboard");
       }
     } catch (err: any) {
@@ -75,7 +71,6 @@ export default function WorkspaceActions() {
 
   return (
     <div className="w-full">
-
       {error && (
         <div className="mb-6 p-3 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-600 text-sm animate-in fade-in slide-in-from-top-2">
           <AlertCircle size={16} />
@@ -110,7 +105,6 @@ export default function WorkspaceActions() {
       {/* CREATE WORKSPACE FORM */}
       {activeTab === "create" && (
         <form onSubmit={handleCreate} className="space-y-6 animate-in fade-in slide-in-from-left-2 duration-500 text-left">
-
           {/* Row 1: Workspace Name & Company Name */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col gap-y-1.5">
@@ -202,7 +196,6 @@ export default function WorkspaceActions() {
           </button>
         </form>
       )}
-
     </div>
   );
 }

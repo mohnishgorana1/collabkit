@@ -1,3 +1,4 @@
+// /app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -30,15 +31,17 @@ export default function RootLayout({
     <ClerkProvider>
       <html
         lang="en"
-        className={`${geistSans.variable} ${geistMono.variable} h-full min-h-screen font-sans antialiased`}
         suppressHydrationWarning
+        className={`${geistSans.variable} ${geistMono.variable} h-full min-h-screen font-sans antialiased`}
       >
-        <body className="min-h-full flex flex-col bg-background text-foreground">
+        <body
+          suppressHydrationWarning
+          className="min-h-full flex flex-col bg-background text-foreground">
           <ThemeProvider
             attribute="class"
             defaultTheme="system"
             enableSystem
-            disableTransitionOnChange
+            // disableTransitionOnChange
           >
             <Navbar />
             <main className="w-full flex flex-col flex-1">

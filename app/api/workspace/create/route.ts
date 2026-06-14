@@ -44,7 +44,6 @@ export async function POST(req: Request) {
     const mongoUserId = await getMongoUser();
     console.log("mongoUserId", mongoUserId);
 
-
     const body = await req.json();
     const validationResult = createWorkspaceSchema.safeParse(body);
 
@@ -63,26 +62,21 @@ export async function POST(req: Request) {
       allowAnyoneToJoin,
     } = validationResult.data;
 
-
-    // Slugs & Codes setup...
+    // Slugs
     const baseSlug = name
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)+/g, "");
     let slug = baseSlug || "workspace";
-    let slugExists = await Workspace.findOne({ slug }).session(session); // ✅ Read under session
-    let counter = 1;
-    while (slugExists) {
-      slug = `${baseSlug}-${counter}`;
-      counter++;
-      slugExists = await Workspace.findOne({ slug }).session(session);
-    }
+
+    // Generate Public ID (e.g., "v9xk2mpq") for URL
+    const publicId = Math.random().toString(36).substring(2, 10).toLowerCase();
+
+    // Generate Invite Code (e.g., "I5T06FL5")
     const inviteCode = Math.random()
       .toString(36)
       .substring(2, 10)
       .toUpperCase();
-
-    console.log("INVITE CODE", inviteCode);
 
     // ----------------------------------------------------------------------
     // 🔴 DANGER ZONE: DB WRITES BEGIN HERE (Everything wrapped in Session)
@@ -94,6 +88,7 @@ export async function POST(req: Request) {
       [
         {
           name,
+          publicId,
           slug,
           description,
           ownerId: mongoUserId,
@@ -158,14 +153,18 @@ export async function POST(req: Request) {
 
     // ----------------------------------------------------------------------
     // ✅ SAFE ZONE: COMMIT EVERYTHING
-    // ----------------------------------------------------------------------
 
     await session.commitTransaction(); // Database par permanently save karo
 
     session.endSession();
 
     return NextResponse.json(
-      { success: true, workspaceId: newWorkspace._id },
+      {
+        success: true,
+        workspaceId: newWorkspace._id,
+        publicId: newWorkspace.publicId,
+        slug: newWorkspace.slug,
+      },
       { status: 201 },
     );
   } catch (error: any) {
