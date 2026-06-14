@@ -44,9 +44,6 @@ export async function POST(req: Request) {
     const { id } = evt.data;
     const eventType = evt.type;
 
-
-
-
     // ✅ HANDLE user.created
     if (eventType === "user.created") {
       console.log("Creating new user in MongoDB...");
@@ -54,9 +51,11 @@ export async function POST(req: Request) {
       const { email_addresses, image_url, first_name, last_name } = evt.data;
 
       const email = email_addresses[0]?.email_address;
-      
+
       // Smart Fallbacks
-      const fallbackFirstName = email ? email.split("@")[0] : "unknown@collabkit.com";
+      const fallbackFirstName = email
+        ? email.split("@")[0]
+        : "unknown@collabkit.com";
       const fallbackLastName = email ? "User" : "";
 
       const user = {
@@ -72,19 +71,38 @@ export async function POST(req: Request) {
       if (result.success && result.data) {
         // 🚀 SUPER IMPORTANT: Clerk ke user publicMetadata mein apna MongoDB ID set karna
         const client = await clerkClient();
-        await client.users.updateUser(id as string, {
-          publicMetadata: {
-            userMongoId: result.data._id,
-          },
-        });
 
-        console.log("✅ Clerk Metadata Updated for:", result.data._id);
+        try {
+          // ✅ FIX 1: Use updateUserMetadata instead of updateUser
+          await client.users.updateUserMetadata(id as string, {
+            publicMetadata: {
+              userMongoId: result.data._id,
+            },
+          });
+          console.log("✅ Clerk Metadata Updated for:", result.data._id);
+        } catch (clerkErr: any) {
+          // ✅ FIX 2: Handle the "Ghost User" 404 Error gracefully
+          if (clerkErr.status === 404) {
+            console.warn(
+              `⚠️ Clerk user ${id} already deleted (transient OAuth user). Skipping metadata update.`,
+            );
+            // Hum isko crash nahi hone denge, success return karenge
+          } else {
+            console.error("❌ Failed to update Clerk Metadata:", clerkErr);
+            return new NextResponse("Failed to update metadata", {
+              status: 500,
+            });
+          }
+        }
+
         return NextResponse.json(
           { message: "New User Created", user: result.data },
           { status: 201 },
         );
       }
 
+      // ✅ FIX 3: Agar DB mein save fail ho jaye, toh 500 return karo taaki Clerk baad mein retry kare
+      console.error("❌ Failed to save user in MongoDB");
       return new NextResponse("Failed to create user in DB", { status: 500 });
     }
 

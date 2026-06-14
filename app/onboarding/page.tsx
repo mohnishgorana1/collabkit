@@ -1,43 +1,75 @@
-"use client";
+import { currentUser } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+import Image from "next/image";
+import { Command } from "lucide-react";
+import WorkspaceActions from "@/components/onboarding/WorkSpaceActions";
 
-import { useUser } from "@clerk/nextjs";
-import { useRouter } from "next/navigation";
-import { ArrowRight, Building2 } from "lucide-react";
+export default async function OnboardingPage() {
+  const user = await currentUser();
 
-export default function OnboardingPage() {
-  const { user, isLoaded } = useUser();
-  const router = useRouter();
+  if (!user) {
+    redirect("/login");
+  }
 
-  if (!isLoaded) return null; // Wait for Clerk to load
+  const primaryEmail = user.emailAddresses.find(
+    (email) => email.id === user.primaryEmailAddressId
+  )?.emailAddress;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background px-4">
-      <div className="max-w-md w-full text-center space-y-6">
-        <div className="w-16 h-16 bg-primary/10 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <Building2 size={32} />
-        </div>
-        
-        <h1 className="text-3xl font-bold text-foreground">
-          Welcome to CollabKit, {user?.firstName || "there"}!
-        </h1>
-        <p className="text-muted-foreground text-lg">
-          Let&apos;s set up your first workspace so your team can start chatting and collaborating.
-        </p>
+    <div className="min-h-screen bg-muted/20 flex flex-col items-center justify-center p-4">
 
-        <div className="pt-8 flex flex-col gap-4">
-          {/* Yeh buttons abhi dummy hain, hum isme Workspace logic add karenge */}
-          <button 
-            onClick={() => router.push('/dashboard')}
-            className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3.5 rounded-lg font-medium hover:bg-primary/90 transition-all hover:scale-[1.02]"
-          >
-            Create a Workspace <ArrowRight size={18} />
-          </button>
-          
-          <button className="w-full py-3.5 rounded-lg font-medium text-foreground bg-secondary hover:bg-secondary/80 transition-colors">
-            Have an invite code? Join Workspace
-          </button>
+      {/* --- CLEAN CARD CONTAINER --- */}
+      <div className="w-full max-w-xl bg-background border border-border rounded-2xl shadow-xl overflow-hidden">
+
+        {/* TOP HEADER SECTION */}
+        <div className="p-8 border-b border-border/50 bg-muted/10">
+
+          {/* heading & Profile Row */}
+          <div className="flex justify-between items-center mb-8">
+            <h1 className="text-xl md:text-2xl font-bold text-foreground/60 tracking-tight">
+              Onboarding
+            </h1>
+
+            {/* Minimalist Profile Pill */}
+            <div className="flex items-center gap-2.5 bg-background border border-border rounded-full py-1.5 pl-1.5 pr-4 shadow-sm">
+              {user.imageUrl ? (
+                <Image
+                  src={user.imageUrl}
+                  alt="Avatar"
+                  width={24}
+                  height={24}
+                  className="rounded-full"
+                />
+              ) : (
+                <div className="w-6 h-6 bg-primary/20 text-primary rounded-full flex items-center justify-center text-xs font-bold">
+                  {user.firstName?.charAt(0)}
+                </div>
+              )}
+              <span className="text-sm font-medium text-muted-foreground truncate max-w-[120px]">
+                {primaryEmail}
+              </span>
+            </div>
+          </div>
+
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
+            Set up your workspace
+          </h1>
+          <p className="text-muted-foreground">
+            A workspace is where your team&apos;s chats, tasks, and documents live.
+            Create a new one or join an existing team.
+          </p>
         </div>
+
+        {/* BOTTOM ACTION SECTION */}
+        <div className="p-8 bg-background">
+          <WorkspaceActions />
+        </div>
+
       </div>
+
+      <p className="mt-8 text-sm text-muted-foreground">
+        Need help? <a href="#" className="underline hover:text-foreground">Contact Support</a>
+      </p>
     </div>
   );
 }
