@@ -69,7 +69,7 @@ const workspaceSchema = new Schema<IWorkspace>(
       index: true,
     },
     inviteCode: { type: String, required: true, unique: true, index: true },
-
+    
     companyInfo: {
       industry: { type: String, default: "" },
       companyName: { type: String, default: "" },

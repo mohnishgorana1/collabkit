@@ -3,11 +3,10 @@ import { getMongoUser } from "@/lib/helpers/auth";
 import { getWorkspacePageData } from "@/lib/actions/workspace.actions";
 import { Hash, Users, Settings, MessageSquare, Lock } from "lucide-react";
 import Link from "next/link";
-import JoinWorkspaceButton from "@/components/workspace/JoinWorkspaceButton";
-import PrivateJoinForm from "@/components/workspace/PrivateJoinForm";
+import JoinWorkspace from "@/components/workspace/JoinWorkspace";
 
 export default async function WorkspacePage(props: {
-  params: Promise<{ publicId: string; slug: string }>; 
+  params: Promise<{ publicId: string; slug: string }>;
   searchParams: Promise<{ inviteCode?: string }>;
 }) {
   const params = await props.params;
@@ -40,7 +39,7 @@ export default async function WorkspacePage(props: {
     const isPublic = workspace.settings?.allowAnyoneToJoin;
     const hasValidInvite = searchParams.inviteCode === workspace.inviteCode;
 
-    // Agar private hai aur code nahi hai/galat hai -> SHOW MANUAL ENTRY FORM
+    // SCENARIO 1: Private hai aur Code nahi hai (Show Input Form)
     if (!isPublic && !hasValidInvite) {
       return (
         <div className="flex flex-col items-center justify-center h-[70vh] max-w-md mx-auto text-center px-4">
@@ -53,7 +52,9 @@ export default async function WorkspacePage(props: {
           </p>
 
           {/* 💡 UPDATE: slug ki jagah publicId (params.publicId) pass karo */}
-          <PrivateJoinForm publicId={params.publicId} />
+          <div className="w-full max-w-xs">
+            <JoinWorkspace publicId={params.publicId} showInput={true} />
+          </div>
 
           <Link
             href="/dashboard"
@@ -65,7 +66,7 @@ export default async function WorkspacePage(props: {
       );
     }
 
-    // Join View
+    // SCENARIO 2: Public hai ya Valid Code URL me hai (Show Just Button)
     return (
       <div className="flex flex-col items-center justify-center h-[70vh] max-w-md mx-auto text-center">
         <div className="w-24 h-24 bg-primary/10 text-primary flex items-center justify-center rounded-3xl text-4xl font-bold mb-6 uppercase">
@@ -76,8 +77,9 @@ export default async function WorkspacePage(props: {
           {workspace.description || "Join this workspace to start collaborating."}
         </p>
 
-        {/* 💡 UPDATE: slug ki jagah publicId pass karo */}
-        <JoinWorkspaceButton publicId={params.publicId} inviteCode={searchParams.inviteCode} />
+        <div className="w-full max-w-xs">
+          <JoinWorkspace publicId={params.publicId} initialInviteCode={searchParams.inviteCode} showInput={false} />
+        </div>
       </div>
     );
   }

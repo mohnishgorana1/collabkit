@@ -104,7 +104,7 @@ export async function POST(req: Request) {
             defaultRole: "MEMBER",
             defaultTimezone: "UTC",
           },
-          isOnboardingComplete: true,
+          isOnboardingComplete: false,
         },
       ],
       { session },

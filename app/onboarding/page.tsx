@@ -3,7 +3,7 @@ import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Image from "next/image";
 import { Command } from "lucide-react";
-import WorkspaceActions from "@/components/onboarding/WorkSpaceActions";
+import WorkspaceActions from "@/components/onboarding/WorkspaceSetupTabs";
 
 export default async function OnboardingPage() {
   const user = await currentUser();

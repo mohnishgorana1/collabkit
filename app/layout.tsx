@@ -1,4 +1,3 @@
-// /app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -18,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CollabKit",
-  description: "CollabKit bundles chat, task boards, and lightweight docs into a single toolkit so teams can collaborate faster without juggling multiple apps. ",
+  title: "CollabKit | The minimal workspace",
+  description: "CollabKit bundles chat, task boards, and lightweight docs into a single premium toolkit.",
 };
 
 export default function RootLayout({
@@ -32,22 +31,33 @@ export default function RootLayout({
       <html
         lang="en"
         suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} h-full min-h-screen font-sans antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} h-full min-h-screen font-sans`}
       >
         <body
           suppressHydrationWarning
-          className="min-h-full flex flex-col bg-background text-foreground">
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            // disableTransitionOnChange
-          >
+          className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20"
+        >
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
             <Navbar />
-            <main className="w-full flex flex-col flex-1">
+            <main className="w-full flex flex-col flex-1 relative z-0">
               {children}
             </main>
-            <Toaster />
+            <Toaster
+              position="bottom-center"
+              toastOptions={{
+                style: {
+                  background: 'var(--color-card)',
+                  color: 'var(--color-foreground)',
+                  border: '1px solid var(--color-border)',
+                  backdropFilter: 'blur(16px)',
+                  borderRadius: '100px', /* Pill shape toasts */
+                  boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
+                  padding: '12px 24px',
+                  fontWeight: 500,
+                  fontSize: '14px'
+                }
+              }}
+            />
           </ThemeProvider>
         </body>
       </html>

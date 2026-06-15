@@ -11,6 +11,7 @@ export async function getUserDashboardData(mongoUserId: string) {
       path: "joinedWorkspaces",
       model: Workspace,
     });
+    
     if (!user) return { success: false, error: "User not found" };
 
     return {

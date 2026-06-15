@@ -1,107 +1,88 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, PlusSquare, Settings, Hash, Users } from "lucide-react";
+import { LayoutDashboard, Settings, Hash, Users, ChevronLeft, ChevronRight } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
+import WorkspaceActionModal from "./workspace/WorkspaceActionModal";
 
 export default function Sidebar({ workspaces }: { workspaces: any[] }) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const pathname = usePathname();
-
-  // URL check
   const isWorkspaceRoute = pathname.includes("/workspace/");
-  
-  // Current workspace ID URL se nikalo (agar workspace me hai toh)
   const currentWorkspaceId = isWorkspaceRoute ? pathname.split("/")[2] : null;
-  const currentWorkspace = workspaces.find((w) => w._id === currentWorkspaceId);
+  const currentWorkspace = workspaces.find((w) => w.publicId === currentWorkspaceId);
 
   return (
-    <aside className="w-64 border-border/50 bg-muted/20 hidden md:flex flex-col justify-between h-full pb-4">
-      
-      {/* 1. SCROLLABLE CONTENT AREA */}
-      <div className="overflow-y-auto py-6 flex flex-col gap-6">
-        
-        {/* --- GLOBAL SECTION (Hamesha dikhega) --- */}
-        <div className="px-4 flex flex-col gap-1">
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 px-2">
-            Overview
-          </p>
-          <Link 
-            href="/dashboard" 
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg font-medium transition-colors ${
-              pathname === "/dashboard" 
-                ? "bg-secondary/80 text-secondary-foreground" 
-                : "text-muted-foreground hover:bg-secondary/40 hover:text-foreground"
-            }`}
-          >
-            <LayoutDashboard size={18} /> 
-            Dashboard
-          </Link>
-          <Link 
-            href="/onboarding" 
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:bg-secondary/40 hover:text-foreground font-medium transition-colors"
-          >
-            <PlusSquare size={18} /> 
-            Create Workspace
-          </Link>
+    <motion.aside
+      initial={false}
+      animate={{ width: isCollapsed ? 80 : 260 }}
+      transition={{ type: "spring", stiffness: 300, damping: 30 }}
+      className="border-r border-border bg-background/50 backdrop-blur-3xl hidden md:flex flex-col justify-between h-full relative overflow-visible will-change-[width] pb-5"
+    >
+      {/* Collapse Toggle Button */}
+      <button
+        onClick={() => setIsCollapsed(!isCollapsed)}
+        className={`absolute -right-[13px] bg-background border border-border rounded-lg p-1 z-50 hover:bg-secondary transition-colors`}
+      >
+        {isCollapsed ? <ChevronRight size={14} className=""/> : <ChevronLeft size={14} className=""/>}
+      </button>
+
+      <div className="overflow-y-auto py-6 flex flex-col gap-6 px-3">
+        <div className="flex flex-col gap-1">
+          <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" isActive={pathname === "/dashboard"} isCollapsed={isCollapsed} />
         </div>
 
-        {/* --- WORKSPACE SECTION (Sirf Workspace route pe dikhega) --- */}
-        {isWorkspaceRoute && currentWorkspace && (
-          <>
-            {/* Divider */}
-            <div className="px-4">
-              <div className="h-px bg-border/60 w-full"></div>
-            </div>
-
-            <div className="px-4 flex flex-col gap-1">
-              {/* Workspace Indicator */}
-              <div className="flex items-center gap-2 px-2 mb-4">
-                <div className="w-6 h-6 rounded bg-primary/20 text-primary flex items-center justify-center font-bold text-xs uppercase">
-                  {currentWorkspace.name.charAt(0)}
-                </div>
-                <h3 className="font-semibold text-foreground truncate">
-                  {currentWorkspace.name}
-                </h3>
+        <AnimatePresence mode="wait">
+          {isWorkspaceRoute && currentWorkspace && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+              <div className="px-3 mb-6"><div className="h-px bg-border w-full"></div></div>
+              <div className="flex flex-col gap-1">
+                <NavItem href={`/workspace/${currentWorkspace.publicId}/${currentWorkspace.slug}`} icon={Hash} label="General" isActive={true} isCollapsed={isCollapsed} />
+                <NavItem href={`/workspace/${currentWorkspace.publicId}/members`} icon={Users} label="Members" isActive={pathname.includes("/members")} isCollapsed={isCollapsed} />
+                <NavItem href={`/workspace/${currentWorkspace.publicId}/settings`} icon={Settings} label="Settings" isActive={pathname.includes("/settings")} isCollapsed={isCollapsed} />
               </div>
-
-              {/* Channels */}
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 px-2">
-                Channels
-              </p>
-              <button className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary/80 text-secondary-foreground font-medium w-full text-left transition-colors">
-                <Hash size={18} className="text-muted-foreground" /> 
-                general
-              </button>
-              <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-secondary/40 text-muted-foreground font-medium w-full text-left transition-colors">
-                <Hash size={18} /> 
-                random
-              </button>
-
-              {/* Team & Settings */}
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-2 px-2 mt-4">
-                Team
-              </p>
-              <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-secondary/40 text-muted-foreground font-medium w-full text-left transition-colors">
-                <Users size={18} /> 
-                Members
-              </button>
-              
-              <button className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-secondary/40 text-muted-foreground font-medium w-full text-left transition-colors mt-2">
-                <Settings size={18} /> 
-                Workspace Settings
-              </button>
-            </div>
-          </>
-        )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* 2. BOTTOM GLOBAL SETTINGS */}
-      <div className="p-4">
-        <Link href="#" className="flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:bg-muted/50 font-medium transition-colors">
-          <Settings size={18} /> 
-          Account Settings
-        </Link>
+      <div className="px-3 border-t border-border pt-4">
+        <NavItem href="/settings" icon={Settings} label="Account" isActive={pathname === "/settings"} isCollapsed={isCollapsed} />
       </div>
-    </aside>
+    </motion.aside>
   );
 }
+
+const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed }: { href: string, icon: any, label: string, isActive: boolean, isCollapsed: boolean }) => (
+  <Link
+    href={href}
+    title={isCollapsed ? label : ""}
+    className={`relative flex items-center transition-all duration-300 ease-in-out
+      ${isCollapsed ? "justify-center w-12 h-12 rounded-xl mx-auto" : "justify-start px-3 py-2.5 rounded-xl gap-3"}
+      ${isActive ? "text-foreground" : "text-muted-foreground hover:text-foreground hover:bg-secondary/50"}`}
+  >
+    {/* Active Background - Sirf tab dikhega jab active ho */}
+    {isActive && (
+      <motion.div
+        layoutId="sidebar-active-bg"
+        className={`absolute inset-0 bg-secondary -z-10 ${isCollapsed ? "rounded-xl" : "rounded-xl"}`}
+        transition={{ type: "spring", stiffness: 400, damping: 30 }}
+      />
+    )}
+
+    <Icon size={20} className={`${isActive ? "text-primary" : ""}`} />
+
+    {!isCollapsed && (
+      <motion.span
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="text-sm font-medium truncate"
+      >
+        {label}
+      </motion.span>
+    )}
+  </Link>
+);

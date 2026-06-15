@@ -1,8 +1,12 @@
+// app/(protected)/dashboard/page.tsx
+
+
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getMongoUser } from "@/lib/helpers/auth";
 import { getUserDashboardData } from "@/lib/actions/workspace.actions";
-import { ArrowRight, Plus, LayoutDashboard } from "lucide-react";
+import { ChevronRight, LayoutDashboard } from "lucide-react";
+import WorkspaceActionModal from "@/components/workspace/WorkspaceActionModal";
 
 export default async function DashboardPage() {
   let mongoUserId;
@@ -20,74 +24,60 @@ export default async function DashboardPage() {
 
   const workspaces = data.workspaces;
 
-  // 4. Render UI
   return (
-    <div className="w-full flex flex-col gap-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">
-            Welcome back, {data.firstName || "User"}!
+    <div className="w-full max-w-5xl mx-auto flex flex-col gap-10 md:p-6 p-4">
+      
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+        <div className="space-y-2">
+          <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-foreground">
+            Hi, {data.firstName || "User"}
           </h1>
-          <p className="text-muted-foreground mt-1">
-            Here is an overview of your active workspaces.
+          <p className="text-muted-foreground text-[15px]">
+            Ready to build something great today?
           </p>
         </div>
-
-        <Link
-          href="/onboarding"
-          className="flex items-center gap-2 bg-primary text-primary-foreground hover:bg-primary/90 px-4 py-2 rounded-md font-medium transition-colors"
-        >
-          <Plus size={18} />
-          New Workspace
-        </Link>
+        <WorkspaceActionModal />
       </div>
 
-      {/* WORKSPACES GRID */}
+      {/* Workspaces Grid */}
       {workspaces && workspaces.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {workspaces.map((ws: any) => (
             <Link
               key={ws._id}
               href={`/workspace/${ws.publicId}/${ws.slug}`}
-              className="group flex flex-col justify-between p-6 rounded-xl border border-border bg-card hover:border-primary/50 hover:shadow-md transition-all h-48"
+              className="group flex flex-col justify-between p-6 rounded-4xl border border-border bg-card hover:bg-secondary/30 transition-all duration-300 h-52 active:scale-[0.97] shadow-sm hover:shadow-md"
             >
               <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold text-lg uppercase">
-                    {ws.name.charAt(0)}
-                  </div>
-                  <h2 className="text-xl font-semibold text-foreground truncate">
-                    {ws.name}
-                  </h2>
+                <div className="w-12 h-12 rounded-[14px] bg-primary text-primary-foreground flex items-center justify-center font-bold text-xl mb-4 shadow-[0_4px_12px_rgba(0,122,255,0.3)] dark:shadow-[0_4px_12px_rgba(10,132,255,0.3)]">
+                  {ws.name.charAt(0)}
                 </div>
-                <p className="text-muted-foreground text-sm line-clamp-2">
+                <h2 className="text-lg font-bold text-foreground truncate mb-1">
+                  {ws.name}
+                </h2>
+                <p className="text-muted-foreground text-sm line-clamp-2 leading-relaxed">
                   {ws.description || "No description provided."}
                 </p>
               </div>
 
-              <div className="flex items-center text-sm font-medium text-primary opacity-0 group-hover:opacity-100 transition-opacity">
-                Open Workspace <ArrowRight size={16} className="ml-1" />
+              <div className="flex items-center text-sm font-semibold text-primary/80 group-hover:text-primary transition-colors">
+                Open <ChevronRight size={16} className="ml-1 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
               </div>
             </Link>
           ))}
         </div>
       ) : (
-        /* EMPTY STATE */
-        <div className="flex flex-col items-center justify-center p-12 rounded-xl border border-dashed border-border/60 bg-card/30 text-center">
-          <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center mb-4">
+        /* Empty State */
+        <div className="flex flex-col items-center justify-center p-16 rounded-4xl border border-border bg-card text-center w-full shadow-sm">
+          <div className="w-20 h-20 rounded-[20px] bg-secondary flex items-center justify-center mb-6">
             <LayoutDashboard className="text-muted-foreground" size={32} />
           </div>
-          <h3 className="text-xl font-semibold mb-2">No workspaces yet</h3>
-          <p className="text-muted-foreground max-w-sm mb-6">
-            You are not part of any workspaces. Create a new one or ask your team
-            for an invite link.
+          <h3 className="text-2xl font-bold tracking-tight mb-2">No active workspaces</h3>
+          <p className="text-muted-foreground mb-8 max-w-sm">
+            You don't belong to any teams yet. Create a new space or use an invite code to join one.
           </p>
-          <Link
-            href="/onboarding"
-            className="flex items-center gap-2 bg-foreground text-background hover:bg-foreground/90 px-6 py-2.5 rounded-full font-medium transition-all"
-          >
-            Create Workspace
-          </Link>
+          <WorkspaceActionModal />
         </div>
       )}
     </div>
