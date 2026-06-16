@@ -25,7 +25,7 @@ export default async function DashboardPage() {
   const workspaces = data.workspaces;
 
   return (
-    <div className="w-full max-w-5xl mx-auto flex flex-col gap-10 md:p-6 p-4">
+    <div className="w-full  mx-auto flex flex-col gap-10">
       
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">

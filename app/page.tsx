@@ -11,13 +11,13 @@ import Footer from "@/components/Footer";
 export default function Home() {
   return (
     <div className="flex flex-col items-center w-full overflow-hidden relative">
-      <BackgroundAura />
-      <HeroSection />
+      {/* <BackgroundAura /> */}
+      {/* <HeroSection /> */}
       <MacOsMockup />
-      <LogoMarquee />
-      <BentoGrid />
-      <VerticalTimeline />
-      <FeatureCarousel />
+      {/* <LogoMarquee /> */}
+      {/* <BentoGrid /> */}
+      {/* <VerticalTimeline /> */}
+      {/* <FeatureCarousel /> */}
       <CtaSection />
 
       <Footer />
