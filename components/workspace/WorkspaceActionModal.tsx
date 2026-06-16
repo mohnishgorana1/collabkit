@@ -1,12 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Plus, X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import WorkspaceSetupTabs from "@/components/onboarding/WorkspaceSetupTabs";
+import { cn } from "@/lib/utils";
 
 export default function WorkspaceActionModal({ asSidebarItem = false }: { asSidebarItem?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Hydration error bachane ke liye portal tabhi chalega jab component client pe mount ho
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <>
@@ -28,44 +36,57 @@ export default function WorkspaceActionModal({ asSidebarItem = false }: { asSide
         </button>
       )}
 
-      <AnimatePresence>
-        {isOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-            {/* Glass Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              onClick={() => setIsOpen(false)}
-              className="absolute inset-0 bg-background/50 backdrop-blur-xl"
-            />
-
-            {/* Modal Card - Apple Spring Physics */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-              className="relative w-full max-w-xl max-h-[90vh] overflow-y-auto bg-card/80 backdrop-blur-2xl border border-border shadow-[0_32px_64px_-12px_rgba(0,0,0,0.15)] rounded-4xl p-6 md:p-8"
-            >
-              <button
+      {/* 🚨 FIX: Portal bahar, AnimatePresence andar */}
+      {mounted && createPortal(
+        <AnimatePresence>
+          {isOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+              
+              {/* Glass Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
                 onClick={() => setIsOpen(false)}
-                className="absolute top-6 right-6 p-2 rounded-full bg-secondary/50 hover:bg-secondary text-muted-foreground transition-colors active:scale-90"
+                className="absolute inset-0 bg-background/60 backdrop-blur-sm"
+              />
+
+              {/* Modal Card */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+                className={cn("relative p-0", 
+                  "w-full max-w-xl max-h-[90vh]",
+                  "flex flex-col overflow-hidden", 
+                  "bg-card/90 backdrop-blur-2xl border border-border shadow-[0_32px_64px_-12px_rgba(0,0,0,0.15)] rounded-4xl"
+                )}
               >
-                <X size={18} />
-              </button>
+                {/* --- MODAL HEADER (FIXED, NON-SCROLLING) --- */}
+                <div className="relative shrink-0 px-6 pt-8 pb-4 text-center">
+                  <button
+                    onClick={() => setIsOpen(false)}
+                    className="absolute top-6 right-6 p-2 rounded-full bg-secondary/50 hover:bg-secondary text-foreground transition-colors active:scale-90 z-10"
+                  >
+                    <X size={18} />
+                  </button>
+                  <h2 className="text-2xl font-bold tracking-tight text-foreground">Workspace Setup</h2>
+                  <p className="text-muted-foreground text-sm mt-1.5">Start a new team or enter an invite code.</p>
+                </div>
 
-              <div className="mb-8 text-center mt-2">
-                <h2 className="text-2xl font-bold tracking-tight text-foreground">Workspace Setup</h2>
-                <p className="text-muted-foreground text-sm mt-1.5">Start a new team or enter an invite code.</p>
-              </div>
+                {/* --- MODAL BODY (SCROLLABLE) --- */}
+                <div className="flex-1 overflow-y-auto custom-thin-scrollbar px-6 pb-8 md:px-8">
+                  <WorkspaceSetupTabs />
+                </div>
 
-              <WorkspaceSetupTabs />
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>,
+        document.body 
+      )}
     </>
   );
 }
