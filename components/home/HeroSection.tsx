@@ -6,7 +6,7 @@ import { Sparkles, ArrowRight } from "lucide-react";
 
 export default function HeroSection() {
   return (
-    <section className="w-full pt-32 pb-10 md:pt-44 md:pb-16 flex flex-col items-center text-center px-4 max-w-5xl mx-auto relative z-10">
+    <section className="w-full pt-22 pb-10 md:pb-16 flex flex-col items-center text-center px-4 max-w-5xl mx-auto relative z-10">
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: -10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}

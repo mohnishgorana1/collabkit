@@ -55,8 +55,8 @@ const Navbar = () => {
       layout
       className={cn("fixed top-0 z-50 w-full transition-all duration-300 ",
         "mx-auto px-2 md:px-4 lg:px-6 h-16  flex items-center",
-        `${scrolled ? "bg-background/50 backdrop-blur-2xl" : "bg-muted border-transparent"}`,
-        `${isProtected ? "border-b border-border/20" : ""}`
+        `${scrolled ? "bg-background/50 backdrop-blur-2xl" : "bg-transparent border-transparent"}`,
+        `${isProtected ? "border-b border-border/50" : ""}`
       )}
     >
       <div className="flex items-center justify-between w-full">

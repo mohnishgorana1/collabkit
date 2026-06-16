@@ -26,7 +26,7 @@ export default function Sidebar() {
       initial={false}
       animate={{ width: isCollapsed ? 80 : 200 }}
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
-      className="border-r border-border bg-background/50 backdrop-blur-3xl hidden md:flex flex-col h-full relative overflow-visible will-change-[width] pb-5 pt-5"
+      className="bg-background/50 backdrop-blur-3xl hidden md:flex flex-col h-full relative overflow-visible will-change-[width] pb-5 pt-5"
     >
       {/* Collapse Toggle Button */}
       {isCollapsed ? (
@@ -35,8 +35,8 @@ export default function Sidebar() {
         <ChevronLeft onClick={() => setIsCollapsed(!isCollapsed)} size={28} className={collapsebtnClasses} />
       )}
 
-      <div className="flex-1 flex flex-col justify-between">
-        <div className="overflow-y-auto py-6 flex flex-col gap-6 px-3">
+      <div className="flex-1 flex flex-col justify-between overflow-hidden">
+        <div className="overflow-y-auto no-scrollbar py-6 flex flex-col gap-6 px-3">
           <div className="flex flex-col gap-1">
             <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" isActive={pathname === "/dashboard"} isCollapsed={isCollapsed} />
           </div>

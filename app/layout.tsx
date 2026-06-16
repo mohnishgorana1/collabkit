@@ -24,29 +24,17 @@ export const metadata: Metadata = {
   description: "CollabKit bundles chat, task boards, and lightweight docs into a single premium toolkit.",
 };
 
-export default async function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const userId = await getMongoUser();
   const data = await getUserDashboardData(userId);
   return (
     <ClerkProvider>
-      <html
-        lang="en"
-        suppressHydrationWarning
-        className={`${geistSans.variable} ${geistMono.variable} h-full min-h-screen font-sans`}
-      >
-        <body
-          suppressHydrationWarning
-          className="min-h-screen bg-background text-foreground overflow-x-hidden selection:bg-primary/20"
-        >
+      <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} h-full font-sans`}>
+        <body suppressHydrationWarning className="bg-background text-foreground overflow-x-hidden selection:bg-primary/20">
           <WorkspaceProvider data={data}>
-
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
               <Navbar />
-              <main className="mt-16 w-full flex flex-col flex-1 relative z-0">
+              <main className="w-full flex flex-col flex-1 relative z-0">
                 {children}
               </main>
               <Toaster
@@ -65,9 +53,9 @@ export default async function RootLayout({
                   }
                 }}
               />
+
             </ThemeProvider>
           </WorkspaceProvider>
-
         </body>
       </html>
     </ClerkProvider>
