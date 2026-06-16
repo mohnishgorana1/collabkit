@@ -13,7 +13,7 @@ export default function WorkspaceActionModal({ asSidebarItem = false }: { asSide
       {asSidebarItem ? (
         <button
           onClick={() => setIsOpen(true)}
-          className="relative flex items-center w-full gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors z-10 group active:scale-[0.98] text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
+          className="btn relative flex items-center w-full gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors z-10 group active:scale-[0.98] text-muted-foreground hover:text-foreground hover:bg-black/5 dark:hover:bg-white/5"
         >
           <Plus size={18} className="transition-transform group-hover:scale-105 text-primary" />
           New Workspace
@@ -21,7 +21,7 @@ export default function WorkspaceActionModal({ asSidebarItem = false }: { asSide
       ) : (
         <button
           onClick={() => setIsOpen(true)}
-          className="flex items-center gap-2 bg-primary text-primary-foreground active:scale-[0.96] hover:brightness-110 px-5 py-2.5 rounded-xl font-medium transition-all shadow-[0_4px_14px_rgba(0,122,255,0.3)] dark:shadow-[0_4px_14px_rgba(10,132,255,0.2)] text-sm"
+          className="btn flex items-center gap-2 bg-primary text-primary-foreground active:scale-[0.96] hover:brightness-110 px-5 py-2.5 rounded-xl font-medium transition-all shadow-[0_4px_14px_rgba(0,122,255,0.3)] dark:shadow-[0_4px_14px_rgba(10,132,255,0.2)] text-sm"
         >
           <Plus size={18} />
           Create / Join

@@ -73,7 +73,7 @@
 
   /* 🌟 GLOBAL THIN SCROLLBAR (Home Page + Children) */
   ::-webkit-scrollbar {
-    width: 5px; 
+    width: 5px;
     height: 5px;
   }
   ::-webkit-scrollbar-track {
@@ -94,4 +94,10 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+
+  .btn{
+    @apply cursor-pointer
+  }
 }
+

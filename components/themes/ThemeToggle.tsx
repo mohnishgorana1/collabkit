@@ -82,7 +82,7 @@ const ThemeToggle = () => {
     <button
       ref={buttonRef}
       onClick={toggleThemeWithTransition}
-      className="p-0 rounded-lg transition-all duration-300 w-8 h-8 flex items-center justify-center
+      className="btn p-0 rounded-lg transition-all duration-300 w-8 h-8 flex items-center justify-center
                    bg-gray-200 text-gray-700 hover:bg-gray-300 
                    dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
       aria-label="Toggle theme"

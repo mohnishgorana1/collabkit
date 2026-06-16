@@ -20,7 +20,7 @@ export default function Sidebar() {
   const currentWorkspaceId = isWorkspaceRoute ? pathname.split("/")[2] : null;
   const currentWorkspace = workspaces.find((w: any) => w.publicId === currentWorkspaceId);
 
-  const collapsebtnClasses = `bg-background border border-border rounded-lg z-50 hover:bg-secondary transition-colors self-center`
+  const collapsebtnClasses = `btn bg-background border border-border rounded-lg z-50 hover:bg-secondary transition-colors self-center`
   return (
     <motion.aside
       initial={false}
