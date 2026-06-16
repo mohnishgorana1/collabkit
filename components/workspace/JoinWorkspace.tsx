@@ -60,7 +60,7 @@ export default function JoinWorkspace({
       <button
         type="submit"
         disabled={isLoading || (showInput && inviteCode.length < 3)}
-        className="w-full mt-4 bg-primary text-primary-foreground hover:brightness-110 py-3.5 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 active:scale-[0.97] disabled:opacity-50 shadow-[0_4px_14px_rgba(0,122,255,0.3)] dark:shadow-[0_4px_14px_rgba(10,132,255,0.2)]"
+        className="btn w-full mt-4 bg-primary text-primary-foreground hover:brightness-110 py-3.5 rounded-xl font-semibold transition-all flex items-center justify-center gap-2 active:scale-[0.97] disabled:opacity-50 shadow-[0_4px_14px_rgba(0,122,255,0.3)] dark:shadow-[0_4px_14px_rgba(10,132,255,0.2)]"
       >
         {isLoading ? <Loader2 size={20} className="animate-spin" /> : "Join Workspace"}
       </button>

@@ -20,7 +20,7 @@ export default function Sidebar() {
   const currentWorkspaceId = isWorkspaceRoute ? pathname.split("/")[2] : null;
   const currentWorkspace = workspaces.find((w: any) => w.publicId === currentWorkspaceId);
 
-  const collapsebtnClasses = `btn bg-background border border-border rounded-lg z-50 hover:bg-secondary transition-colors self-center`
+  const collapsebtnClasses = `btn bg-background border border-border rounded-lg z-50 hover:bg-secondary transition-colors  ${isCollapsed ? "self-center" : "self-end ml-8"}`
   return (
     <motion.aside
       initial={false}
@@ -28,23 +28,30 @@ export default function Sidebar() {
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className="bg-background/50 backdrop-blur-3xl hidden md:flex flex-col h-full relative overflow-visible will-change-[width] pb-5 pt-5"
     >
+
       {/* Collapse Toggle Button */}
-      {isCollapsed ? (
-        <ChevronRight onClick={() => setIsCollapsed(!isCollapsed)} size={28} className={collapsebtnClasses} />
-      ) : (
-        <ChevronLeft onClick={() => setIsCollapsed(!isCollapsed)} size={28} className={collapsebtnClasses} />
-      )}
+      <div className="w-full flex flex-col px-3">
+        
+        {isCollapsed ? (
+          <ChevronRight onClick={() => setIsCollapsed(!isCollapsed)} size={28} className={collapsebtnClasses} />
+        ) : (
+          <ChevronLeft onClick={() => setIsCollapsed(!isCollapsed)} size={28} className={collapsebtnClasses} />
+        )}
+      </div>
 
-      <div className="flex-1 flex flex-col justify-between overflow-hidden">
-        <div className="overflow-y-auto no-scrollbar py-6 flex flex-col gap-6 px-3">
-          <div className="flex flex-col gap-1">
-            <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" isActive={pathname === "/dashboard"} isCollapsed={isCollapsed} />
-          </div>
 
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="overflow-y-auto no-scrollbar flex flex-col px-3 py-4">
+
+          {/* Dashboard */}
+          <NavItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" isActive={pathname === "/dashboard"} isCollapsed={isCollapsed} />
+
+
+          {/* Workspaces */}
           <AnimatePresence mode="wait">
             {isWorkspaceRoute && currentWorkspace && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                <div className="px-3 mb-6"><div className="h-px bg-border w-full"></div></div>
+                <Divider />
                 <div className="flex flex-col gap-1">
                   <NavItem href={`/workspace/${currentWorkspace.publicId}/${currentWorkspace.slug}`} icon={Hash} label="General" isActive={true} isCollapsed={isCollapsed} />
                   <NavItem href={`/workspace/${currentWorkspace.publicId}/members`} icon={Users} label="Members" isActive={pathname.includes("/members")} isCollapsed={isCollapsed} />
@@ -53,12 +60,18 @@ export default function Sidebar() {
               </motion.div>
             )}
           </AnimatePresence>
+
+          <Divider />
+          {/* account */}
+          <div className="">
+            <NavItem href="/settings" icon={Settings} label="Account" isActive={pathname === "/settings"} isCollapsed={isCollapsed} />
+          </div>
         </div>
 
-        <div className="px-3 border-t border-border pt-4">
-          <NavItem href="/settings" icon={Settings} label="Account" isActive={pathname === "/settings"} isCollapsed={isCollapsed} />
-        </div>
+
       </div>
+
+
     </motion.aside>
   );
 }
@@ -94,3 +107,10 @@ const NavItem = ({ href, icon: Icon, label, isActive, isCollapsed }: { href: str
     )}
   </Link>
 );
+
+
+const Divider = () => {
+  return (
+    <div className="px-3"><div className="my-4 h-px bg-border w-full"></div></div>
+  )
+}

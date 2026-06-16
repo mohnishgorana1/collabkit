@@ -25,13 +25,27 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const userId = await getMongoUser();
-  const data = await getUserDashboardData(userId);
+
+  let workspaceData;
+
+  try {
+    const userId = await getMongoUser();
+    if (userId) {
+      const fetchedData = await getUserDashboardData(userId);
+      if (fetchedData) {
+        workspaceData = fetchedData;
+      }
+    }
+  } catch {
+    // Agar "Unauthorized" error aaye (user logged out hai), toh usko silent kar do.
+    // Landing page aaram se bina crash huye chalega.
+  }
+
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} h-full font-sans`}>
         <body suppressHydrationWarning className="bg-background text-foreground overflow-x-hidden selection:bg-primary/20">
-          <WorkspaceProvider data={data}>
+          <WorkspaceProvider data={workspaceData}>
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
               <Navbar />
               <main className="w-full flex flex-col flex-1 relative z-0">
