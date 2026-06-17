@@ -7,6 +7,7 @@ import Workspace from "@/models/workspace.model";
 import WorkspaceMember from "@/models/workspaceMember.model";
 import { z } from "zod";
 import { getMongoUser } from "@/lib/helpers/auth";
+import Channel from "@/models/channel.model";
 
 // Zod Schema (Jo pehle banaya tha)
 const createWorkspaceSchema = z.object({
@@ -36,6 +37,8 @@ const createWorkspaceSchema = z.object({
 export async function POST(req: Request) {
   await dbConnect();
 
+  await Channel.createCollection().catch(() => {});
+  
   // 1. Start MongoDB Session for Transaction
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -115,10 +118,7 @@ export async function POST(req: Request) {
     }
     const newWorkspace = workspaceCreated[0]; // Get the created doc
 
-    console.log("new worksapce", newWorkspace);
-
     // STEP B: Create Member
-
     const memberCreated = await WorkspaceMember.create(
       [
         {
@@ -133,9 +133,29 @@ export async function POST(req: Request) {
     if (!memberCreated || memberCreated.length === 0) {
       throw new Error("Failed to add user as workspace owner");
     }
-    console.log("workspace member ", memberCreated);
 
-    // STEP C: Update User
+    // STEP C: Auto-Create Default #general Channel
+    const channelCreated = await Channel.create(
+      [
+        {
+          workspaceId: newWorkspace._id,
+          name: "general",
+          type: "CHAT",
+          description: "General chat for everyone in the workspace.",
+          isPrivate: false,
+          order: 0,
+          createdBy: mongoUserId,
+        },
+      ],
+      { session },
+    );
+    if (!channelCreated || channelCreated.length === 0) {
+      throw new Error("Failed to create default general channel");
+    }
+    console.log("Default channel created:", channelCreated[0]);
+
+
+    // STEP D: Update User
     const updatedUser = await User.findByIdAndUpdate(
       mongoUserId,
       {

@@ -1,3 +1,4 @@
+// /workspace/[publicId]/[slug]/page.tsx
 import { redirect } from "next/navigation";
 import { getMongoUser } from "@/lib/helpers/auth";
 import { getWorkspacePageData } from "@/lib/actions/workspace.actions";
@@ -89,6 +90,6 @@ export default async function WorkspacePage(props: {
   // VIEW 2: AGAR USER MEMBER HAI (WORKSPACE DASHBOARD)
   // ==========================================
   return (
-    <WorkspaceDashboard />
+    <WorkspaceDashboard workspace={workspace}/>
   );
 }
