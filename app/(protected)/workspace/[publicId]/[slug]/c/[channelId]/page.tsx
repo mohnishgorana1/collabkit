@@ -6,6 +6,8 @@ import { Hash, SquareKanban, FileText, } from "lucide-react";
 import KanbanBoard from "@/components/workspace/channel/KanbanBoard";
 import { getBoardTasks } from "@/lib/actions/task.actions";
 import { getWorkspaceMembers } from "@/lib/actions/workspace.actions";
+import ChatBox from "@/components/workspace/channel/ChatBox";
+import { getChannelMessages } from "@/lib/actions/message.actions";
 
 export default async function ChannelPage(props: {
   params: Promise<{ publicId: string; slug: string; channelId: string }>;
@@ -37,16 +39,23 @@ export default async function ChannelPage(props: {
   // ---------------------------------------------------------
 
   if (channel.type === "CHAT") {
+    // 💡 NAYA DATA FETCH KIYA
+    const messagesData = await getChannelMessages(channel._id);
+    const initialMessages = messagesData.success ? messagesData.messages : [];
+
     return (
       <div className="flex-1 flex flex-col h-full bg-background/50">
-        <div className="h-16 border-b border-border/60 flex items-center px-6 bg-background shrink-0 gap-2">
+        <div className="h-16 border-b border-border/60 flex items-center px-6 bg-background shrink-0 gap-2 shadow-sm z-10">
           <Hash size={20} className="text-muted-foreground" />
           <h2 className="font-semibold text-lg text-foreground">{channel.name}</h2>
         </div>
-        <div className="flex-1 flex items-center justify-center text-muted-foreground">
-          {/* Yahan hamara real-time ChatBox component aayega */}
-          <p>Real-time chat interface coming soon...</p>
-        </div>
+
+        <ChatBox
+          initialMessages={initialMessages}
+          workspaceId={channel.workspaceId}
+          channelId={channel._id}
+          currentUserId={mongoUserId}
+        />
       </div>
     );
   }

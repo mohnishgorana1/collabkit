@@ -248,7 +248,6 @@ export default function KanbanBoard({
   );
 }
 
-
 const KanbanBoardSearchBar = ({
   searchQuery,
   setSearchQuery,
@@ -375,7 +374,6 @@ const CreateTaskForm = ({
   );
 }
 
-
 const TaskCard = ({
   task,
   column,
@@ -482,7 +480,6 @@ const TaskCard = ({
     </motion.div>
   );
 }
-
 
 const TaskDetailsModal = ({
   selectedTask,
