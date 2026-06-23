@@ -16,7 +16,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
         <Sidebar />
       </div>
 
-      <main className="flex-1 overflow-y-auto px-2 py-4 md:p-4 relative">
+      <main className="flex-1 overflow-y-auto relative">
         {children}
       </main>
 
