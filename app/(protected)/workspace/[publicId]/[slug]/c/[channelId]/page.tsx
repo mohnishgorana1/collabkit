@@ -12,7 +12,6 @@ import { getBoardTasks } from "@/lib/actions/task.actions";
 import { getWorkspaceMembers } from "@/lib/actions/workspace.actions";
 import { getChannelMessages } from "@/lib/actions/message.actions";
 import { getOrCreateDocument } from "@/lib/actions/document.actions";
-import dynamic from "next/dynamic";
 import Workspace from "@/models/workspace.model";
 
 
@@ -106,7 +105,6 @@ export default async function ChannelPage(props: {
       return <div className="p-10 text-red-500">Error loading document.</div>;
     }
 
-
     const membersData = await getWorkspaceMembers(channel.workspaceId);
     const workspaceMembers = membersData.success ? membersData.members : [];
 
@@ -124,11 +122,6 @@ export default async function ChannelPage(props: {
     );
     // Final Flag
     const isEditable = isChannelCreator || isAllowedEditor;
-
-
-    // console.log("doc data", docData);
-    // console.log("ic hcnalle creator", isChannelCreator);
-    // console.log("is allower editor",isAllowedEditor);
 
 
     return (

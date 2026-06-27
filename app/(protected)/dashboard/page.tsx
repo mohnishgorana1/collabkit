@@ -75,7 +75,7 @@ export default async function DashboardPage() {
           </div>
           <h3 className="text-2xl font-bold tracking-tight mb-2">No active workspaces</h3>
           <p className="text-muted-foreground mb-8 max-w-sm">
-            You don't belong to any teams yet. Create a new space or use an invite code to join one.
+            You don&apos;t belong to any teams yet. Create a new space or use an invite code to join one.
           </p>
           <WorkspaceActionModal />
         </div>

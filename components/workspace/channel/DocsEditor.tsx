@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { Loader2, CheckCircle2, Clock, Users, Link as LinkIcon, Download, Trash2, X } from "lucide-react";
-import { updateDocumentContent, updateDocumentEditors } from "@/lib/actions/document.actions"; // 💡 UPDATE 1: updateDocumentContent wapas laya
+import { updateDocumentContent, updateDocumentEditors } from "@/lib/actions/document.actions"; 
 import { deleteGenericChannel } from "@/lib/actions/channel.actions";
 import { useTheme } from "next-themes";
 import toast from "react-hot-toast";
@@ -13,7 +13,7 @@ import { getInitials } from "@/lib/utils";
 
 // --- LIVEBLOCKS IMPORTS ---
 import { LiveblocksProvider, RoomProvider, ClientSideSuspense } from "@liveblocks/react/suspense";
-import { useRoom, useSelf, useSyncStatus, useOthers, useBroadcastEvent, useEventListener } from "@liveblocks/react/suspense"; // 💡 UPDATE 2: Event Hooks add kiye
+import { useRoom, useSelf, useSyncStatus, useOthers, useBroadcastEvent, useEventListener } from "@liveblocks/react/suspense"; 
 import { LiveblocksYjsProvider } from "@liveblocks/yjs";
 import * as Y from "yjs";
 
@@ -47,14 +47,12 @@ function CollaborativeEditor({ doc, provider, resolvedTheme, isEditable, documen
             editable={isEditable}
             theme={resolvedTheme === "dark" ? "dark" : "light"}
             className="pb-12"
-            // 💡 FIX 1: SILENT MONGODB BACKUP
-            // Liveblocks real-time handle karega, aur ye function chupchap DB me permanent backup bhejega
             onChange={() => {
                 if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
                 saveTimeoutRef.current = setTimeout(async () => {
                     const jsonContent = JSON.stringify(editor.document);
                     await updateDocumentContent(documentId, jsonContent);
-                }, 2000); // 2 second pause ke baad DB update
+                }, 2000); 
             }}
         />
     );
@@ -144,14 +142,14 @@ function ActiveUsers() {
 }
 
 // ==========================================
-// 4. INNER COMPONENT (Ab iske paas Broadcast Event ka access hai)
+// 4. INNER COMPONENT (With Strict UI Permissions)
 // ==========================================
 function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, currentUserId, channelCreatorId, workspaceOwnerId, workspaceId }: any) {
     const router = useRouter();
     const { resolvedTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
 
-    // Broadcast Hooks for Auto-Refresh Permissions
+    const editorRef = useRef<HTMLDivElement>(null);
     const broadcast = useBroadcastEvent();
 
     const [isManageEditorsOpen, setIsManageEditorsOpen] = useState(false);
@@ -160,12 +158,11 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
     const [isDeleting, setIsDeleting] = useState(false);
     const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
-    const canDelete = currentUserId === channelCreatorId || currentUserId === workspaceOwnerId;
+    // 💡 STRICT UI CHECK: Sirf Channel Creator ya Workspace Owner ko full access milega
+    const hasFullAdminAccess = currentUserId === channelCreatorId || currentUserId === workspaceOwnerId;
 
     useEffect(() => setMounted(true), []);
 
-    // 💡 FIX 2: REAL-TIME PERMISSION LISTENER
-    // Agar koi doosra admin permissions change karega, toh yahan automatic signal aayega aur page refresh ho jayega.
     useEventListener(({ event }) => {
         if (event.type === "PERMISSIONS_UPDATED") {
             toast("Access updated! Refreshing view...");
@@ -214,20 +211,15 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
 
         try {
             const isDark = resolvedTheme === "dark";
-            // 💡 FIX 1: Exact theme colors define kiye (Tailwind ke default dark colors)
             const bgColor = isDark ? "#09090b" : "#ffffff";
             const textColor = isDark ? "#ffffff" : "#000000";
 
-            // 💡 FIX 2: CSS inject karke editor par color force kiya
             const style = document.createElement('style');
             style.innerHTML = `
-                /* Main editor ko theme color diya taaki white bg na aaye */
                 .bn-editor { 
                     background-color: ${bgColor} !important; 
                     color: ${textColor} !important;
                 }
-                
-                /* Brown patti aur hover effects htane ke liye */
                 [data-content-type="heading"], 
                 .bn-heading,
                 .bn-block-content,
@@ -236,8 +228,6 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
                 }
             `;
             document.head.appendChild(style);
-
-            // Active line class hata do
             document.querySelectorAll('.active-line').forEach((el) => el.classList.remove('active-line'));
 
             // @ts-ignore
@@ -250,28 +240,23 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
                 html2canvas: {
                     scale: 2,
                     useCORS: true,
-                    backgroundColor: bgColor, // Yahan bhi color de diya safety ke liye
+                    backgroundColor: bgColor, 
                     logging: false
                 },
                 jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
             };
 
-            // PDF generate karo
             await html2pdf().set(opt).from(element).save();
-
-            // 💡 Cleanup: Download hote hi styling delete kardo taaki web UI normally chalta rahe
             document.head.removeChild(style);
 
             toast.success("PDF Downloaded!", { id: toastId });
         } catch (error) {
             console.error(error);
-            // Error aane par bhi styling clean karni zaruri hai
             document.head.removeChild(style);
             toast.error("Failed to generate PDF", { id: toastId });
         }
     };
 
-    
     const handleConfirmDelete = async () => {
         setIsDeleting(true);
         const res = await deleteGenericChannel(initialDocument.channelId, workspaceId, currentUserId);
@@ -295,11 +280,8 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
         const res = await updateDocumentEditors(initialDocument._id, newEditorIds);
         if (res.success) {
             setEditorsList(res.editors);
-
-            // 💡 SIGNAL BHEJO BAAT BAAR REFRESH NAHI KARNA PADEGA
             broadcast({ type: "PERMISSIONS_UPDATED" });
-            router.refresh(); // Khud ka UI bhi refresh kar lo
-
+            router.refresh(); 
             toast.success(isAlreadyEditor ? "Editor removed" : "Editor added");
         } else {
             toast.error("Failed to update permissions");
@@ -322,7 +304,9 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
             {/* --- LEFT SECTION: Editor --- */}
             <section className="flex-1 overflow-y-auto custom-thin-scrollbar relative z-0 bg-secondary/10 dark:bg-black/20">
                 <div className="mx-auto w-full flex flex-col min-h-full">
-                    <div className="flex-1 w-full bg-card border border-border/60 shadow-lg p-4 sm:p-10
+                    <div
+                        ref={editorRef}
+                        className="flex-1 w-full bg-card border border-border/60 shadow-lg p-4 sm:p-10
                         [&_.bn-container]:!bg-transparent 
                         [&_.bn-container[data-theme]]:!bg-transparent 
                         [&_.ProseMirror]:!bg-transparent 
@@ -368,7 +352,8 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
                 <div className="mb-8">
                     <div className="flex items-center justify-between mb-3">
                         <h3 className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">Editors</h3>
-                        {isEditable && (
+                        {/* 💡 THE FIX: Yahan 'isEditable' ki jagah 'hasFullAdminAccess' lagaya hai */}
+                        {hasFullAdminAccess && (
                             <button onClick={() => setIsManageEditorsOpen(true)} className="text-[10px] font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded transition-colors">+ Manage</button>
                         )}
                     </div>
@@ -415,7 +400,8 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
                             className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs font-semibold bg-background border border-border hover:bg-accent hover:text-accent-foreground rounded-lg transition-all text-muted-foreground shadow-sm">
                             <Download size={14} /> Export to PDF
                         </button>
-                        {canDelete && (
+                        {/* 💡 THE FIX: Yahan delete ki permission wapas hasFullAdminAccess rakhi */}
+                        {hasFullAdminAccess && (
                             <div className="mt-4 border-t border-border pt-5">
                                 <button onClick={() => setShowConfirmDelete(true)} className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs font-semibold bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-lg transition-all text-red-600 dark:text-red-400 shadow-sm">
                                     <Trash2 size={14} /> Delete Document
@@ -482,15 +468,12 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
                     </div>
                 )}
             </AnimatePresence>
-
         </div>
     );
 }
-
 // ==========================================
 // 5. MAIN WRAPPER (Providers setup)
 // ==========================================
-// 💡 MAIN CHANGE: Humne Providers ko bahar nikal diya taaki Inner component useBroadcastEvent hook ko access kar sake!
 export default function DocsEditor(props: any) {
     return (
         <LiveblocksProvider authEndpoint="/api/liveblocks-auth">

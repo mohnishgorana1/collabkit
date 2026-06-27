@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, LayoutDashboard, Settings, Hash, Users } from "lucide-react";
+import { Menu, X, LayoutDashboard, Settings, Hash, Users, User, UserCircle2 } from "lucide-react";
 import ThemeToggle from "./themes/ThemeToggle";
 import { UserButton, useAuth } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "motion/react";
@@ -26,7 +26,7 @@ const MobileNavItem = ({ href, icon: Icon, label, isActive, onClick }: any) => (
   </Link>
 );
 
-const Navbar = () => {
+const Navbar = ({ name }: { name: any }) => {
   const pathname = usePathname();
   const isProtected = pathname.startsWith('/dashboard') || pathname.startsWith('/workspace');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -42,6 +42,8 @@ const Navbar = () => {
   const isWorkspaceRoute = pathname.includes("/workspace/");
   const currentWorkspaceId = isWorkspaceRoute ? pathname.split("/")[2] : null;
   const currentWorkspace = workspaces.find((w: any) => w.publicId === currentWorkspaceId);
+
+
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -75,6 +77,12 @@ const Navbar = () => {
                 <LayoutDashboard size={16} /> Dashboard
               </Link>
               <div className="h-4 w-px bg-border"></div>
+              {/* TODO: REMOVE AFTER */}
+              <div className="bg-muted py-2 px-3 rounded-2xl flex items-center gap-2 text-primary">
+                <UserCircle2 size={12}/>
+                <p>{name}</p>
+                </div>
+
               {/* <UserButton appearance={{ elements: { avatarBox: "w-8 h-8 rounded-full" } }} /> */}
             </div>
           )}
@@ -127,7 +135,7 @@ const Navbar = () => {
                 )}
 
                 <div className="mt-auto pt-6 border-t border-border">
-                  <MobileNavItem href="/settings" icon={Settings} label="Account Settings" isActive={pathname === "/settings"} onClick={() => setIsMobileMenuOpen(false)}/>
+                  <MobileNavItem href="/settings" icon={Settings} label="Account Settings" isActive={pathname === "/settings"} onClick={() => setIsMobileMenuOpen(false)} />
                 </div>
               </div>
             ) : (

@@ -6,7 +6,7 @@ import { Toaster } from "react-hot-toast";
 import Navbar from "@/components/Navbar";
 import { ClerkProvider } from "@clerk/nextjs";
 import { WorkspaceProvider } from "@/context/WorkspaceContext";
-import { getMongoUser } from "@/lib/helpers/auth";
+import { getFullMongoUser, getMongoUser } from "@/lib/helpers/auth";
 import { getUserDashboardData } from "@/lib/actions/workspace.actions";
 
 const geistSans = Geist({
@@ -28,8 +28,10 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 
   let workspaceData;
 
+  const fullUser = await getFullMongoUser();
   try {
     const userId = await getMongoUser();
+
     if (userId) {
       const fetchedData = await getUserDashboardData(userId);
       if (fetchedData) {
@@ -47,7 +49,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <body suppressHydrationWarning className="bg-background text-foreground overflow-x-hidden selection:bg-primary/20">
           <WorkspaceProvider data={workspaceData}>
             <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-              <Navbar />
+              <Navbar name={fullUser.firstName}/>
               <main className="w-full flex flex-col flex-1 relative z-0">
                 {children}
               </main>
