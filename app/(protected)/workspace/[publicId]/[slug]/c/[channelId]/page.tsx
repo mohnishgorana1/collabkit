@@ -145,7 +145,6 @@ export default async function ChannelPage(props: {
           )}
         </div>
 
-        {/* 💡 PASSING PROP TO EDITOR */}
         <DocsEditor
           initialDocument={document}
           isEditable={isEditable}

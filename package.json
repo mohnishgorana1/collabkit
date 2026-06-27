@@ -19,6 +19,7 @@
     "@liveblocks/yjs": "^3.20.1",
     "axios": "^1.17.0",
     "clsx": "^2.1.1",
+    "html2pdf.js": "^0.14.0",
     "lucide-react": "^1.18.0",
     "mongoose": "^8.24.0",
     "motion": "^12.40.0",

@@ -13,8 +13,6 @@ export async function POST(request: Request) {
 
     const { room } = await request.json();
   
-    console.log("userInfo", user)
-
     // Prepare the Liveblocks session
     const session = liveblocks.prepareSession(String(user._id), {
       userInfo: {

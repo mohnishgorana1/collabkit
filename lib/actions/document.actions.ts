@@ -46,7 +46,7 @@ export async function getOrCreateDocument(
     
     return { success: true, document: JSON.parse(JSON.stringify(doc)) };
   } catch (error: any) {
-    console.error("Error fetching document:", error);
+    // console.error("Error fetching document:", error);
     return { success: false, error: error.message };
   }
 }
@@ -70,7 +70,7 @@ export async function updateDocumentContent(docId: string, content: string) {
 
     return { success: true };
   } catch (error: any) {
-    console.error("Error updating document:", error);
+    // console.error("Error updating document:", error);
     return { success: false, error: error.message };
   }
 }
@@ -92,7 +92,7 @@ export async function updateDocumentEditors(documentId: string, newEditorIds: st
 
     return { success: true, editors: JSON.parse(JSON.stringify(updatedDoc.allowedEditors)) };
   } catch (error: any) {
-    console.error("Error updating editors:", error);
+    // console.error("Error updating editors:", error);
     return { success: false, error: error.message };
   }
 }

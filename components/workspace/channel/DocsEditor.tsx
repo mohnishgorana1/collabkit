@@ -150,7 +150,7 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
     const router = useRouter();
     const { resolvedTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
-    
+
     // Broadcast Hooks for Auto-Refresh Permissions
     const broadcast = useBroadcastEvent();
 
@@ -169,7 +169,7 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
     useEventListener(({ event }) => {
         if (event.type === "PERMISSIONS_UPDATED") {
             toast("Access updated! Refreshing view...");
-            router.refresh(); 
+            router.refresh();
         }
     });
 
@@ -203,6 +203,75 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
         toast.success("Document link copied!");
     };
 
+    const handleExportPDF = async () => {
+        const element = document.querySelector('.bn-editor') as HTMLElement;
+        if (!element) {
+            toast.error("Editor not found!");
+            return;
+        }
+
+        const toastId = toast.loading("Generating PDF...");
+
+        try {
+            const isDark = resolvedTheme === "dark";
+            // 💡 FIX 1: Exact theme colors define kiye (Tailwind ke default dark colors)
+            const bgColor = isDark ? "#09090b" : "#ffffff";
+            const textColor = isDark ? "#ffffff" : "#000000";
+
+            // 💡 FIX 2: CSS inject karke editor par color force kiya
+            const style = document.createElement('style');
+            style.innerHTML = `
+                /* Main editor ko theme color diya taaki white bg na aaye */
+                .bn-editor { 
+                    background-color: ${bgColor} !important; 
+                    color: ${textColor} !important;
+                }
+                
+                /* Brown patti aur hover effects htane ke liye */
+                [data-content-type="heading"], 
+                .bn-heading,
+                .bn-block-content,
+                .active-line { 
+                    background-color: transparent !important; 
+                }
+            `;
+            document.head.appendChild(style);
+
+            // Active line class hata do
+            document.querySelectorAll('.active-line').forEach((el) => el.classList.remove('active-line'));
+
+            // @ts-ignore
+            const html2pdf = (await import('html2pdf.js')).default;
+
+            const opt = {
+                margin: 0.5,
+                filename: `CollabKit-Doc-${new Date().toLocaleDateString()}.pdf`,
+                image: { type: 'jpeg', quality: 1 },
+                html2canvas: {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: bgColor, // Yahan bhi color de diya safety ke liye
+                    logging: false
+                },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+            };
+
+            // PDF generate karo
+            await html2pdf().set(opt).from(element).save();
+
+            // 💡 Cleanup: Download hote hi styling delete kardo taaki web UI normally chalta rahe
+            document.head.removeChild(style);
+
+            toast.success("PDF Downloaded!", { id: toastId });
+        } catch (error) {
+            console.error(error);
+            // Error aane par bhi styling clean karni zaruri hai
+            document.head.removeChild(style);
+            toast.error("Failed to generate PDF", { id: toastId });
+        }
+    };
+
+    
     const handleConfirmDelete = async () => {
         setIsDeleting(true);
         const res = await deleteGenericChannel(initialDocument.channelId, workspaceId, currentUserId);
@@ -226,7 +295,7 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
         const res = await updateDocumentEditors(initialDocument._id, newEditorIds);
         if (res.success) {
             setEditorsList(res.editors);
-            
+
             // 💡 SIGNAL BHEJO BAAT BAAR REFRESH NAHI KARNA PADEGA
             broadcast({ type: "PERMISSIONS_UPDATED" });
             router.refresh(); // Khud ka UI bhi refresh kar lo
@@ -278,7 +347,7 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
 
             {/* --- RIGHT SECTION: Sidebar --- */}
             <section className="hidden md:flex flex-col w-64 lg:w-[300px] shrink-0 border-l border-border bg-card p-6 overflow-y-auto custom-thin-scrollbar shadow-[-15px_0_30px_-10px_rgba(0,0,0,0.05)] dark:shadow-[-15px_0_30px_-10px_rgba(0,0,0,0.4)] z-10 relative">
-                
+
                 <div className="mb-8">
                     <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Status</h3>
                     <ClientSideSuspense fallback={<div>Loading...</div>}>
@@ -341,7 +410,9 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
                         <button onClick={handleCopyLink} className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs font-semibold bg-background border border-border hover:bg-accent hover:text-accent-foreground rounded-lg transition-all text-muted-foreground shadow-sm">
                             <LinkIcon size={14} /> Copy Link
                         </button>
-                        <button className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs font-semibold bg-background border border-border hover:bg-accent hover:text-accent-foreground rounded-lg transition-all text-muted-foreground shadow-sm">
+                        <button
+                            onClick={handleExportPDF}
+                            className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs font-semibold bg-background border border-border hover:bg-accent hover:text-accent-foreground rounded-lg transition-all text-muted-foreground shadow-sm">
                             <Download size={14} /> Export to PDF
                         </button>
                         {canDelete && (
