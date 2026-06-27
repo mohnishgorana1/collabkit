@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -36,21 +36,39 @@ export default function Sidebar() {
   const currentWorkspaceId = isWorkspaceRoute ? pathname.split("/")[2] : null;
   const currentWorkspace = workspaces.find((w: any) => w.publicId === currentWorkspaceId);
 
+
   const [isChannelModalOpen, setIsChannelModalOpen] = useState(false);
   const [modalDefaultType, setModalDefaultType] = useState<"CHAT" | "TASKS" | "DOCS">("CHAT");
 
   // Fetch channels when workspace changes
+  const [refreshKey, setRefreshKey] = useState(0);
+  const activeWorkspaceId = currentWorkspace?._id;
+
   useEffect(() => {
-    if (currentWorkspace?._id) {
-      getWorkspaceChannels(currentWorkspace._id).then((res) => {
-        if (res.success) {
-          setChannels(res.channels);
-        }
-      });
-    } else {
-      setChannels([]);
-    }
-  }, [currentWorkspace?._id]);
+    let isMounted = true; // Memory leaks se bachne ke liye
+
+    const fetchWorkspaceChannels = async () => {
+      if (!activeWorkspaceId) return;
+
+      const res = await getWorkspaceChannels(activeWorkspaceId);
+
+      // Agar component abhi bhi screen par hai, tabhi state set karo
+      if (isMounted && res.success) {
+        setChannels(res.channels);
+      }
+    };
+
+    fetchWorkspaceChannels();
+
+    return () => {
+      isMounted = false; // Cleanup function
+    };
+  }, [activeWorkspaceId, refreshKey]);
+
+  // Ye function hum Modal ko pass karenge
+  const handleChannelCreated = () => {
+    setRefreshKey((prev) => prev + 1); // State change hote hi useEffect wapas chal jayega
+  };
 
   const chatChannels = channels.filter((c) => c.type === "CHAT");
   const taskChannels = channels.filter((c) => c.type === "TASKS");
@@ -104,29 +122,29 @@ export default function Sidebar() {
                 {/* Workspace Channels (With Dropdown Style) */}
                 <div className={isCollapsed ? "flex flex-col gap-3" : "ml-2 pl-2 border-l-2 border-border/40"}>
                   <ChannelGroup
-                    title="Chats" 
-                    channels={chatChannels} 
+                    title="Chats"
+                    channels={chatChannels}
                     icon={Hash}
-                    currentWorkspace={currentWorkspace} 
-                    pathname={pathname} 
+                    currentWorkspace={currentWorkspace}
+                    pathname={pathname}
                     isCollapsed={isCollapsed}
                     onAdd={() => { setModalDefaultType("CHAT"); setIsChannelModalOpen(true); }}
                   />
                   <ChannelGroup
-                    title="Boards" 
-                    channels={taskChannels} 
+                    title="Boards"
+                    channels={taskChannels}
                     icon={SquareKanban}
-                    currentWorkspace={currentWorkspace} 
-                    pathname={pathname} 
+                    currentWorkspace={currentWorkspace}
+                    pathname={pathname}
                     isCollapsed={isCollapsed}
                     onAdd={() => { setModalDefaultType("TASKS"); setIsChannelModalOpen(true); }}
                   />
                   <ChannelGroup
-                    title="Docs" 
-                    channels={docChannels} 
+                    title="Docs"
+                    channels={docChannels}
                     icon={FileText}
-                    currentWorkspace={currentWorkspace} 
-                    pathname={pathname} 
+                    currentWorkspace={currentWorkspace}
+                    pathname={pathname}
                     isCollapsed={isCollapsed}
                     onAdd={() => { setModalDefaultType("DOCS"); setIsChannelModalOpen(true); }}
                   />
@@ -173,6 +191,7 @@ export default function Sidebar() {
           onClose={() => setIsChannelModalOpen(false)}
           workspaceId={currentWorkspace._id}
           defaultType={modalDefaultType}
+          onSuccess={handleChannelCreated}
         />
       )}
 

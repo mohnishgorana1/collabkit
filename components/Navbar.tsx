@@ -75,7 +75,7 @@ const Navbar = () => {
                 <LayoutDashboard size={16} /> Dashboard
               </Link>
               <div className="h-4 w-px bg-border"></div>
-              <UserButton appearance={{ elements: { avatarBox: "w-8 h-8 rounded-full" } }} />
+              {/* <UserButton appearance={{ elements: { avatarBox: "w-8 h-8 rounded-full" } }} /> */}
             </div>
           )}
           <ThemeToggle />
@@ -83,7 +83,7 @@ const Navbar = () => {
 
         {/* Mobile Toggle Button */}
         <div className="flex items-center gap-4 md:hidden">
-          {isSignedIn && <UserButton />}
+          {/* {isSignedIn && <UserButton />} */}
           <ThemeToggle />
           <button
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

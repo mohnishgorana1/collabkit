@@ -16,9 +16,10 @@ interface CreateChannelModalProps {
     onClose: () => void;
     workspaceId: string;
     defaultType?: ChannelType;
+    onSuccess: () => void;
 }
 
-export default function CreateChannelModal({ isOpen, onClose, workspaceId, defaultType = "CHAT" }: CreateChannelModalProps) {
+export default function CreateChannelModal({ isOpen, onClose, workspaceId, defaultType = "CHAT", onSuccess }: CreateChannelModalProps) {
     const router = useRouter();
     const [mounted, setMounted] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -46,8 +47,8 @@ export default function CreateChannelModal({ isOpen, onClose, workspaceId, defau
             setName("");
             setDescription("");
             setTaskPrefix("");
+            onSuccess();
             onClose();
-            router.refresh(); // UI update karne ke liye
         } else {
             toast.error(res.error || "Something went wrong");
         }

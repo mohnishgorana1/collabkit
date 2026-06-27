@@ -7,6 +7,11 @@ import mongoose from "mongoose";
 import { getMongoUser } from "../helpers/auth";
 import WorkspaceMember from "@/models/workspaceMember.model";
 import { z } from "zod";
+import Workspace from "@/models/workspace.model";
+import ChannelDoc from "@/models/document.model";
+import Message from "@/models/message.model";
+import Task from "@/models/task.model";
+import { revalidatePath } from "next/cache";
 
 // Zod Schema for createChannelSchema Validation
 const createChannelSchema = z
@@ -48,7 +53,6 @@ const createChannelSchema = z
       path: ["taskPrefix"], // Yeh error exactly taskPrefix field par point karega
     },
   );
-
 
 export async function getWorkspaceChannels(workspaceId: string) {
   try {
@@ -93,14 +97,13 @@ export async function createChannel(payload: {
     const validationResult = createChannelSchema.safeParse(payload);
     if (!validationResult.success) {
       // Return the first validation error message
-      return { 
-        success: false, 
-        error: validationResult.error.message 
+      return {
+        success: false,
+        error: validationResult.error.message,
       };
     }
 
     const validData = validationResult.data;
-
 
     // SECURITY CHECK: Kya user is workspace ka member hai?
     const isMember = await WorkspaceMember.findOne({
@@ -141,10 +144,12 @@ export async function createChannel(payload: {
       order: 0,
     });
     if (!newChannel) {
-      return { success: false, error: "Failed to create channel. Please try again." };
+      return {
+        success: false,
+        error: "Failed to create channel. Please try again.",
+      };
     }
 
-   
     // SUCCESS
     return {
       success: true,
@@ -156,25 +161,113 @@ export async function createChannel(payload: {
   }
 }
 
-
-// lib/actions/channel.actions.ts
-
 export async function getChannelById(channelId: string) {
   try {
     await dbConnect();
-    
+
     const channel = await Channel.findById(channelId).lean();
-    
+
     if (!channel) {
       return { success: false, error: "Channel not found" };
     }
 
-    return { 
-      success: true, 
-      channel: JSON.parse(JSON.stringify(channel)) 
+    return {
+      success: true,
+      channel: JSON.parse(JSON.stringify(channel)),
     };
   } catch (error: any) {
     console.error("Error fetching channel:", error);
     return { success: false, error: error.message };
+  }
+}
+
+export async function deleteGenericChannel(
+  channelId: string,
+  workspaceId: string,
+  currentUserId: string,
+) {
+  // MongoDB Session start karenge transaction ke liye
+  const session = await mongoose.startSession();
+  try {
+    await dbConnect();
+
+    session.startTransaction();
+
+    // 1. Channel aur Workspace ko ek sath fetch karein
+    const channel = await Channel.findById(channelId);
+    if (!channel) {
+      await session.abortTransaction();
+      session.endSession();
+      return { success: false, error: "Channel not found!" };
+    }
+
+    const workspace = await Workspace.findById(workspaceId);
+    if (!workspace) {
+      await session.abortTransaction();
+      session.endSession();
+      return { success: false, error: "Workspace not found!" };
+    }
+    // 2. Roles aur Ownership check karein
+    const isCreator = channel.createdBy.toString() === currentUserId;
+    const isWorkspaceOwner = workspace.ownerId.toString() === currentUserId;
+
+    // 3. Robust Access Control Matrix
+    let isAuthorized = false;
+
+    switch (channel.type) {
+      case "DOCS":
+        // Creator OR Workspace Owner (Orphaned document trap se bachne ke liye)
+        isAuthorized = isCreator || isWorkspaceOwner;
+        break;
+      case "TASKS":
+        // Creator OR Workspace Owner (Team leads/PMs ko flexibility dene ke liye)
+        isAuthorized = isCreator || isWorkspaceOwner;
+        break;
+      case "CHAT":
+        // Creator OR Workspace Owner
+        isAuthorized = isCreator || isWorkspaceOwner;
+        break;
+      default:
+        isAuthorized = false;
+    }
+
+    if (!isAuthorized) {
+      return {
+        success: false,
+        error:
+          "You don't have permission to delete this channel only Channel Creator and Workspace owner have the permission",
+      };
+    }
+
+    // 4. Channel ko delete krna with session
+    await Channel.findByIdAndDelete(channelId, { session });
+
+    // 5. Cascade Delete: Linked data cleanup with session
+    if (channel.type === "DOCS") {
+      await ChannelDoc.findOneAndDelete(
+        { channelId: channel._id },
+        { session },
+      );
+    }
+
+    if (channel.type === "CHAT") {
+      await Message.deleteMany({ channelId }, { session });
+    }
+    if (channel.type === "TASKS") {
+      await Task.deleteMany({ channelId }, { session });
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    revalidatePath(`/workspace/${workspaceId}`);
+
+    return { success: true };
+  } catch (error: any) {
+    await session.abortTransaction();
+    session.endSession();
+
+    console.error("Delete channel error:", error.message);
+    return { success: false, error: "Channel delete karne me error aayi." };
   }
 }

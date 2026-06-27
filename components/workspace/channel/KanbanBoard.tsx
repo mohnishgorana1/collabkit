@@ -5,6 +5,7 @@ import { Search, Filter, Plus, MoreHorizontal, GripVertical, Loader2, AlignLeft,
 import { updateTaskStatus, createTask, deleteTask, updateTaskDetails } from "@/lib/actions/task.actions";
 import toast from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import { getInitials } from "@/lib/utils";
 
 const COLUMNS = [
   { id: "TODO", title: "TODO", headerText: "text-slate-400", cardBg: "bg-slate-500/10 hover:bg-slate-500/20", cardBorder: "border-slate-500/30" },
@@ -388,11 +389,7 @@ const TaskCard = ({
   const assigneeId = task.assigneeId?._id || task.assigneeId;
   const assignee = members.find((m: any) => m._id === assigneeId);
 
-  const getInitials = (name: string) => {
-    const parts = name.trim().split(" ");
-    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
-    return name.substring(0, 2).toUpperCase();
-  };
+ 
   const getColorClass = (name: string) => {
     const sum = name.split("").reduce((acc, char) => acc + char.charCodeAt(0), 0);
     return AVATAR_COLORS[sum % AVATAR_COLORS.length];
