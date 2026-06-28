@@ -1,8 +1,8 @@
-// /workspace/[publicId]/[slug]/page.tsx
 import { redirect } from "next/navigation";
 import { getMongoUser } from "@/lib/helpers/auth";
 import { getWorkspacePageData } from "@/lib/actions/workspace.actions";
-import { Hash, Users, Settings, MessageSquare, Lock } from "lucide-react";
+import { getWorkspaceChannels } from "@/lib/actions/channel.actions"; // 💡 IMPORT THIS
+import { Lock } from "lucide-react";
 import Link from "next/link";
 import JoinWorkspace from "@/components/workspace/JoinWorkspace";
 import WorkspaceDashboard from "@/components/workspace/WorkspaceDashboard";
@@ -41,7 +41,6 @@ export default async function WorkspacePage(props: {
     const isPublic = workspace.settings?.allowAnyoneToJoin;
     const hasValidInvite = searchParams.inviteCode === workspace.inviteCode;
 
-    // SCENARIO 1: Private hai aur Code nahi hai (Show Input Form)
     if (!isPublic && !hasValidInvite) {
       return (
         <div className="flex flex-col items-center justify-center h-[70vh] max-w-md mx-auto text-center px-4">
@@ -53,7 +52,6 @@ export default async function WorkspacePage(props: {
             This workspace is invite-only. If you have an invite code, please enter it below to gain access.
           </p>
 
-          {/* 💡 UPDATE: slug ki jagah publicId (params.publicId) pass karo */}
           <div className="w-full max-w-xs">
             <JoinWorkspace publicId={params.publicId} showInput={true} />
           </div>
@@ -68,7 +66,6 @@ export default async function WorkspacePage(props: {
       );
     }
 
-    // SCENARIO 2: Public hai ya Valid Code URL me hai (Show Just Button)
     return (
       <div className="flex flex-col items-center justify-center h-[70vh] max-w-md mx-auto text-center">
         <div className="w-24 h-24 bg-primary/10 text-primary flex items-center justify-center rounded-3xl text-4xl font-bold mb-6 uppercase">
@@ -86,10 +83,14 @@ export default async function WorkspacePage(props: {
     );
   }
 
+  // Fetch channels for the dashboard
+  const channelsData = await getWorkspaceChannels(workspace._id);
+  const channels = channelsData.success ? channelsData.channels : [];
+
   // ==========================================
   // VIEW 2: AGAR USER MEMBER HAI (WORKSPACE DASHBOARD)
   // ==========================================
   return (
-    <WorkspaceDashboard workspace={workspace}/>
+    <WorkspaceDashboard workspace={workspace} channels={channels} />
   );
 }

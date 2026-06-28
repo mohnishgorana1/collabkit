@@ -150,6 +150,10 @@ export async function createChannel(payload: {
       };
     }
 
+    await Workspace.findByIdAndUpdate(payload.workspaceId, {
+      $inc: { "stats.totalChannels": 1 },
+    });
+
     // SUCCESS
     return {
       success: true,
@@ -207,6 +211,7 @@ export async function deleteGenericChannel(
       session.endSession();
       return { success: false, error: "Workspace not found!" };
     }
+
     // 2. Roles aur Ownership check karein
     const isCreator = channel.createdBy.toString() === currentUserId;
     const isWorkspaceOwner = workspace.ownerId.toString() === currentUserId;
@@ -256,6 +261,13 @@ export async function deleteGenericChannel(
     if (channel.type === "TASKS") {
       await Task.deleteMany({ channelId }, { session });
     }
+
+    // 💡 THE FIX: Decrease totalChannels count in Workspace (-1)
+    await Workspace.findByIdAndUpdate(
+      workspaceId,
+      { $inc: { "stats.totalChannels": -1 } },
+      { session },
+    );
 
     await session.commitTransaction();
     session.endSession();

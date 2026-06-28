@@ -1,3 +1,4 @@
+// /app/api/workspace/join/route.ts
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import dbConnect from "@/lib/dbConnect";
@@ -8,7 +9,7 @@ import { getMongoUser } from "@/lib/helpers/auth";
 
 export async function POST(req: Request) {
   await dbConnect();
-  
+
   // 💡 OPTIMIZATION 1: Start Transaction (Data safety ke liye)
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -36,44 +37,62 @@ export async function POST(req: Request) {
     if (isMember) {
       await session.abortTransaction();
       session.endSession();
-      return NextResponse.json({ message: "Already a member", workspaceId: workspace._id });
+      return NextResponse.json({
+        message: "Already a member",
+        workspaceId: workspace._id,
+      });
     }
 
     // 3. Security Check
-    if (publicId && !workspace.settings.allowAnyoneToJoin && workspace.inviteCode !== inviteCode) {
+    if (
+      publicId &&
+      !workspace.settings.allowAnyoneToJoin &&
+      workspace.inviteCode !== inviteCode
+    ) {
       throw new Error("Invalid invite code");
     }
 
     // ---------------------------------------------------------
     // 💡 OPTIMIZATION 2: Parallel Writes (API speed 2x fast)
     // ---------------------------------------------------------
-    
+
     // Arrays me saare operations daal do
     const parallelWrites = [
       // Write A: Create Member
       WorkspaceMember.create(
         [{ workspaceId: workspace._id, userId, role: "MEMBER" }],
-        { session }
+        { session },
       ),
-      
+
       // Write B: Update User
       User.findByIdAndUpdate(
         userId,
-        { $addToSet: { joinedWorkspaces: workspace._id }, onboardingCompleted: true },
-        { session }
-      )
+        {
+          $addToSet: { joinedWorkspaces: workspace._id },
+          onboardingCompleted: true,
+        },
+        { session },
+      ),
     ];
 
-    // Write C: Update Workspace (Condition based)
+    // 💡 Sahi Update Object
+    const workspaceUpdate: any = {
+      $inc: { "stats.totalMembers": 1 }, // Har join par count +1 hoga
+    };
+
+    // Agar onboarding complete nahi hui thi pehle, toh usko bhi sath me update kardo
     if (!workspace.isOnboardingComplete) {
-      parallelWrites.push(
-        Workspace.findByIdAndUpdate(
-          workspace._id,
-          { isOnboardingComplete: true },
-          { session }
-        )
-      );
+      workspaceUpdate.$set = { isOnboardingComplete: true };
     }
+
+    // ✅ Write C: Update Workspace (Condition hata di hai, yeh hamesha chalega)
+    parallelWrites.push(
+      Workspace.findByIdAndUpdate(
+        workspace._id, 
+        workspaceUpdate, 
+        { session }
+      )
+    );
 
     // Sabko ek sath database me maar do! 🚀
     await Promise.all(parallelWrites);
@@ -83,18 +102,17 @@ export async function POST(req: Request) {
     session.endSession();
 
     return NextResponse.json({ success: true, workspaceId: workspace._id });
-    
   } catch (error: any) {
     // Agar koi ek bhi promise fail hua toh sab undo (rollback) ho jayega
     await session.abortTransaction();
     session.endSession();
-    
+
     console.error("Join Error:", error);
     const statusCode = error.message.includes("Invalid") ? 403 : 500;
-    
+
     return NextResponse.json(
       { error: error.message || "Internal Server Error" },
-      { status: statusCode }
+      { status: statusCode },
     );
   }
 }

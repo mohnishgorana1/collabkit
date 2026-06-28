@@ -1,3 +1,4 @@
+// /app/page.tsx
 import BackgroundAura from "@/components/home/BackgroundAura";
 import HeroSection from "@/components/home/HeroSection";
 import MacOsMockup from "@/components/home/MacOsMockup";

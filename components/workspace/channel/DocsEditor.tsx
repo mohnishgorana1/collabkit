@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import { Loader2, CheckCircle2, Clock, Users, Link as LinkIcon, Download, Trash2, X } from "lucide-react";
-import { updateDocumentContent, updateDocumentEditors } from "@/lib/actions/document.actions"; 
+import { Loader2, CheckCircle2, Clock, Users, Link as LinkIcon, Download, Trash2, X, Menu } from "lucide-react";
+import { updateDocumentContent, updateDocumentEditors } from "@/lib/actions/document.actions";
 import { deleteGenericChannel } from "@/lib/actions/channel.actions";
 import { useTheme } from "next-themes";
 import toast from "react-hot-toast";
@@ -13,7 +13,7 @@ import { getInitials } from "@/lib/utils";
 
 // --- LIVEBLOCKS IMPORTS ---
 import { LiveblocksProvider, RoomProvider, ClientSideSuspense } from "@liveblocks/react/suspense";
-import { useRoom, useSelf, useSyncStatus, useOthers, useBroadcastEvent, useEventListener } from "@liveblocks/react/suspense"; 
+import { useRoom, useSelf, useSyncStatus, useOthers, useBroadcastEvent, useEventListener } from "@liveblocks/react/suspense";
 import { LiveblocksYjsProvider } from "@liveblocks/yjs";
 import * as Y from "yjs";
 
@@ -23,9 +23,6 @@ import { BlockNoteView } from "@blocknote/mantine";
 import "@blocknote/core/fonts/inter.css";
 import "@blocknote/mantine/style.css";
 
-// ==========================================
-// 1. COLLABORATIVE EDITOR ENGINE (With MongoDB Backup)
-// ==========================================
 function CollaborativeEditor({ doc, provider, resolvedTheme, isEditable, documentId }: any) {
     const currentUser = useSelf();
     const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -52,15 +49,13 @@ function CollaborativeEditor({ doc, provider, resolvedTheme, isEditable, documen
                 saveTimeoutRef.current = setTimeout(async () => {
                     const jsonContent = JSON.stringify(editor.document);
                     await updateDocumentContent(documentId, jsonContent);
-                }, 2000); 
+                }, 2000);
             }}
         />
     );
 }
 
-// ==========================================
-// 2. ROOM SETUP COMPONENT
-// ==========================================
+// ROOM SETUP COMPONENT
 function BlockNoteRoom({ resolvedTheme, isEditable, documentId }: any) {
     const room = useRoom();
     const [doc, setDoc] = useState<Y.Doc>();
@@ -83,9 +78,7 @@ function BlockNoteRoom({ resolvedTheme, isEditable, documentId }: any) {
     return <CollaborativeEditor doc={doc} provider={provider} resolvedTheme={resolvedTheme} isEditable={isEditable} documentId={documentId} />;
 }
 
-// ==========================================
-// 3. STATUS INDICATORS & ACTIVE USERS
-// ==========================================
+
 function DesktopSyncStatus() {
     const status = useSyncStatus();
     const isSaving = status === "synchronizing";
@@ -141,8 +134,99 @@ function ActiveUsers() {
     );
 }
 
+function DocsSidebarContent({
+    initialDocument,
+    hasFullAdminAccess,
+    editorsList,
+    setIsManageEditorsOpen,
+    handleCopyLink,
+    handleExportPDF,
+    setShowConfirmDelete
+}: any) {
+    return (
+        <>
+            <div className="mb-8">
+                <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Status</h3>
+                <ClientSideSuspense fallback={<div>Loading...</div>}>
+                    <DesktopSyncStatus />
+                </ClientSideSuspense>
+            </div>
+
+            <div className="mb-8">
+                <h3 className="text-[11px] font-bold text-emerald-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Active Now
+                </h3>
+                <ClientSideSuspense fallback={<Loader2 className="animate-spin text-muted-foreground" size={16} />}>
+                    <ActiveUsers />
+                </ClientSideSuspense>
+            </div>
+
+            {/* 2. EDITORS LIST */}
+            <div className="mb-8">
+                <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">Editors</h3>
+                    {hasFullAdminAccess && (
+                        <button onClick={() => setIsManageEditorsOpen(true)} className="text-[10px] font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded transition-colors">+ Manage</button>
+                    )}
+                </div>
+                <div className="flex flex-wrap gap-2 items-center bg-muted/30 p-3 rounded-xl border border-border/50">
+                    <div className="flex -space-x-2 overflow-hidden px-1">
+                        {editorsList.map((editor: any) => {
+                            const editorName = `${editor.firstName} ${editor.lastName}`.trim() || "User";
+                            return editor.avatarUrl ? (
+                                <Image key={editor._id} src={editor.avatarUrl} alt={editorName} title={editorName} width={32} height={32} className="inline-block h-8 w-8 rounded-full ring-2 ring-card object-cover bg-secondary" />
+                            ) : (
+                                <div key={editor._id} title={`Assigned to: ${editorName}`} className="w-8 h-8 rounded-full ring-2 ring-card bg-secondary flex items-center justify-center text-[9px] font-black">{getInitials(editorName)}</div>
+                            );
+                        })}
+                    </div>
+                    <span className="text-xs font-medium text-muted-foreground ml-2">{editorsList.length} {editorsList.length === 1 ? 'Editor' : 'Editors'}</span>
+                </div>
+            </div>
+
+            {/* 3. PROPERTIES */}
+            <div className="mb-8">
+                <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Properties</h3>
+                <div className="flex flex-col gap-3.5 text-xs text-muted-foreground bg-muted/40 p-4 rounded-xl border border-border/50 shadow-sm">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-foreground/70"><Clock size={14} /> Created</div>
+                        <span className="font-semibold text-foreground truncate max-w-[90px]">{new Date(initialDocument.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+                    </div>
+                    <div className="h-px w-full bg-border/60" />
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-foreground/70"><Users size={14} /> Access</div>
+                        <span className="font-semibold text-foreground bg-background px-2 py-0.5 rounded border border-border/50 shadow-sm">Workspace</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* 4. ACTIONS */}
+            <div>
+                <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Actions</h3>
+                <div className="flex flex-col gap-2.5">
+                    <button onClick={handleCopyLink} className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs font-semibold bg-background border border-border hover:bg-accent hover:text-accent-foreground rounded-lg transition-all text-muted-foreground shadow-sm">
+                        <LinkIcon size={14} /> Copy Link
+                    </button>
+                    <button
+                        onClick={handleExportPDF}
+                        className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs font-semibold bg-background border border-border hover:bg-accent hover:text-accent-foreground rounded-lg transition-all text-muted-foreground shadow-sm">
+                        <Download size={14} /> Export to PDF
+                    </button>
+                    {hasFullAdminAccess && (
+                        <div className="mt-4 border-t border-border pt-5">
+                            <button onClick={() => setShowConfirmDelete(true)} className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs font-semibold bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-lg transition-all text-red-600 dark:text-red-400 shadow-sm">
+                                <Trash2 size={14} /> Delete Document
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </>
+    );
+}
+
 // ==========================================
-// 4. INNER COMPONENT (With Strict UI Permissions)
+// 4. INNER COMPONENT
 // ==========================================
 function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, currentUserId, channelCreatorId, workspaceOwnerId, workspaceId }: any) {
     const router = useRouter();
@@ -152,13 +236,15 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
     const editorRef = useRef<HTMLDivElement>(null);
     const broadcast = useBroadcastEvent();
 
+    // 💡 Mobile Sidebar State
+    const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+
     const [isManageEditorsOpen, setIsManageEditorsOpen] = useState(false);
     const [editorsList, setEditorsList] = useState(initialDocument?.allowedEditors || []);
     const [isUpdatingPermissions, setIsUpdatingPermissions] = useState(false);
     const [isDeleting, setIsDeleting] = useState(false);
     const [showConfirmDelete, setShowConfirmDelete] = useState(false);
 
-    // 💡 STRICT UI CHECK: Sirf Channel Creator ya Workspace Owner ko full access milega
     const hasFullAdminAccess = currentUserId === channelCreatorId || currentUserId === workspaceOwnerId;
 
     useEffect(() => setMounted(true), []);
@@ -240,7 +326,7 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
                 html2canvas: {
                     scale: 2,
                     useCORS: true,
-                    backgroundColor: bgColor, 
+                    backgroundColor: bgColor,
                     logging: false
                 },
                 jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
@@ -281,7 +367,7 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
         if (res.success) {
             setEditorsList(res.editors);
             broadcast({ type: "PERMISSIONS_UPDATED" });
-            router.refresh(); 
+            router.refresh();
             toast.success(isAlreadyEditor ? "Editor removed" : "Editor added");
         } else {
             toast.error("Failed to update permissions");
@@ -289,16 +375,37 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
         setIsUpdatingPermissions(false);
     };
 
+    // Props bundle for the Sidebar Content
+    const sidebarProps = {
+        initialDocument,
+        hasFullAdminAccess,
+        editorsList,
+        setIsManageEditorsOpen,
+        handleCopyLink,
+        handleExportPDF,
+        setShowConfirmDelete
+    };
+
     if (!mounted) return <div className="flex-1 flex items-center justify-center bg-background"><Loader2 className="animate-spin text-muted-foreground" /></div>;
 
     return (
         <div className="flex flex-col md:flex-row h-full bg-background relative overflow-hidden">
+
             {/* --- MOBILE VIEW: Top Bar --- */}
             <div className="md:hidden flex items-center justify-between p-3 border-b border-border bg-card shadow-sm shrink-0 z-10 relative">
                 <span className="text-sm font-semibold text-foreground">Document</span>
-                <ClientSideSuspense fallback={<div className="text-[10px] text-muted-foreground">Connecting...</div>}>
-                    <MobileSyncStatus />
-                </ClientSideSuspense>
+                <div className="flex items-center gap-3">
+                    <ClientSideSuspense fallback={<div className="text-[10px] text-muted-foreground">Connecting...</div>}>
+                        <MobileSyncStatus />
+                    </ClientSideSuspense>
+                    {/* 💡 Menu button to open mobile right sidebar */}
+                    <button
+                        onClick={() => setIsMobileSidebarOpen(true)}
+                        className="p-1.5 bg-secondary/50 hover:bg-secondary rounded-md text-foreground transition-colors"
+                    >
+                        <Menu size={18} />
+                    </button>
+                </div>
             </div>
 
             {/* --- LEFT SECTION: Editor --- */}
@@ -329,92 +436,53 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
                 </div>
             </section>
 
-            {/* --- RIGHT SECTION: Sidebar --- */}
+            {/* --- RIGHT SECTION: Desktop Sidebar --- */}
             <section className="hidden md:flex flex-col w-64 lg:w-[300px] shrink-0 border-l border-border bg-card p-6 overflow-y-auto custom-thin-scrollbar shadow-[-15px_0_30px_-10px_rgba(0,0,0,0.05)] dark:shadow-[-15px_0_30px_-10px_rgba(0,0,0,0.4)] z-10 relative">
+                <DocsSidebarContent {...sidebarProps} />
+            </section>
 
-                <div className="mb-8">
-                    <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Status</h3>
-                    <ClientSideSuspense fallback={<div>Loading...</div>}>
-                        <DesktopSyncStatus />
-                    </ClientSideSuspense>
-                </div>
+            {/* --- MOBILE DRAWER (Slide from right, below navbar) --- */}
+            <AnimatePresence>
+                {isMobileSidebarOpen && (
+                    <>
+                        {/* Overlay/Backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            onClick={() => setIsMobileSidebarOpen(false)}
+                            // 💡 FIX: inset-0 ki jagah top-16, inset-x-0 aur bottom-0 lagaya
+                            className="fixed top-16 inset-x-0 bottom-0 bg-background/60 backdrop-blur-sm z-40 md:hidden"
+                        />
 
-                <div className="mb-8">
-                    <h3 className="text-[11px] font-bold text-emerald-500 uppercase tracking-wider mb-3 flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Active Now
-                    </h3>
-                    <ClientSideSuspense fallback={<Loader2 className="animate-spin text-muted-foreground" size={16} />}>
-                        <ActiveUsers />
-                    </ClientSideSuspense>
-                </div>
-
-                {/* 2. EDITORS LIST */}
-                <div className="mb-8">
-                    <div className="flex items-center justify-between mb-3">
-                        <h3 className="font-bold text-[11px] text-muted-foreground uppercase tracking-wider">Editors</h3>
-                        {/* 💡 THE FIX: Yahan 'isEditable' ki jagah 'hasFullAdminAccess' lagaya hai */}
-                        {hasFullAdminAccess && (
-                            <button onClick={() => setIsManageEditorsOpen(true)} className="text-[10px] font-semibold text-primary bg-primary/10 hover:bg-primary/20 px-2 py-1 rounded transition-colors">+ Manage</button>
-                        )}
-                    </div>
-                    <div className="flex flex-wrap gap-2 items-center bg-muted/30 p-3 rounded-xl border border-border/50">
-                        <div className="flex -space-x-2 overflow-hidden px-1">
-                            {editorsList.map((editor: any) => {
-                                const editorName = `${editor.firstName} ${editor.lastName}`.trim() || "User";
-                                return editor.avatarUrl ? (
-                                    <Image key={editor._id} src={editor.avatarUrl} alt={editorName} title={editorName} width={32} height={32} className="inline-block h-8 w-8 rounded-full ring-2 ring-card object-cover bg-secondary" />
-                                ) : (
-                                    <div key={editor._id} title={`Assigned to: ${editorName}`} className="w-8 h-8 rounded-full ring-2 ring-card bg-secondary flex items-center justify-center text-[9px] font-black">{getInitials(editorName)}</div>
-                                );
-                            })}
-                        </div>
-                        <span className="text-xs font-medium text-muted-foreground ml-2">{editorsList.length} {editorsList.length === 1 ? 'Editor' : 'Editors'}</span>
-                    </div>
-                </div>
-
-                {/* 3. PROPERTIES */}
-                <div className="mb-8">
-                    <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Properties</h3>
-                    <div className="flex flex-col gap-3.5 text-xs text-muted-foreground bg-muted/40 p-4 rounded-xl border border-border/50 shadow-sm">
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-foreground/70"><Clock size={14} /> Created</div>
-                            <span className="font-semibold text-foreground truncate max-w-[90px]">{new Date(initialDocument.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
-                        </div>
-                        <div className="h-px w-full bg-border/60" />
-                        <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-foreground/70"><Users size={14} /> Access</div>
-                            <span className="font-semibold text-foreground bg-background px-2 py-0.5 rounded border border-border/50 shadow-sm">Workspace</span>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 4. ACTIONS */}
-                <div>
-                    <h3 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-3">Actions</h3>
-                    <div className="flex flex-col gap-2.5">
-                        <button onClick={handleCopyLink} className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs font-semibold bg-background border border-border hover:bg-accent hover:text-accent-foreground rounded-lg transition-all text-muted-foreground shadow-sm">
-                            <LinkIcon size={14} /> Copy Link
-                        </button>
-                        <button
-                            onClick={handleExportPDF}
-                            className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs font-semibold bg-background border border-border hover:bg-accent hover:text-accent-foreground rounded-lg transition-all text-muted-foreground shadow-sm">
-                            <Download size={14} /> Export to PDF
-                        </button>
-                        {/* 💡 THE FIX: Yahan delete ki permission wapas hasFullAdminAccess rakhi */}
-                        {hasFullAdminAccess && (
-                            <div className="mt-4 border-t border-border pt-5">
-                                <button onClick={() => setShowConfirmDelete(true)} className="flex items-center gap-2.5 w-full px-3 py-2.5 text-xs font-semibold bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900/50 hover:bg-red-100 dark:hover:bg-red-900/50 rounded-lg transition-all text-red-600 dark:text-red-400 shadow-sm">
-                                    <Trash2 size={14} /> Delete Document
+                        {/* Drawer Panel */}
+                        <motion.div
+                            initial={{ x: "100%" }}
+                            animate={{ x: 0 }}
+                            exit={{ x: "100%" }}
+                            transition={{ type: "spring", bounce: 0, damping: 25 }}
+                            // 💡 FIX: inset-y-0 ki jagah top-16 aur bottom-0 lagaya
+                            className="fixed top-16 bottom-0 right-0 w-72 sm:w-80 bg-card border-l border-border shadow-2xl z-50 md:hidden flex flex-col p-6 overflow-y-auto custom-thin-scrollbar"
+                        >
+                            <div className="flex justify-between items-center mb-6">
+                                <span className="font-semibold text-foreground">Document Info</span>
+                                <button
+                                    onClick={() => setIsMobileSidebarOpen(false)}
+                                    className="p-1.5 bg-secondary/50 hover:bg-secondary rounded-full text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                    <X size={18} />
                                 </button>
                             </div>
-                        )}
-                    </div>
-                </div>
-            </section>
+
+                            <DocsSidebarContent {...sidebarProps} />
+                        </motion.div>
+                    </>
+                )}
+            </AnimatePresence>
 
             {/* --- MANAGE EDITORS MODAL --- */}
             {isManageEditorsOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
                     <div className="bg-card border border-border shadow-2xl rounded-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
                         <div className="flex items-center justify-between p-4 border-b border-border bg-secondary/30">
                             <h2 className="font-semibold text-foreground">Manage Editors</h2>
@@ -471,6 +539,7 @@ function DocsEditorInner({ initialDocument, isEditable, workspaceMembers, curren
         </div>
     );
 }
+
 // ==========================================
 // 5. MAIN WRAPPER (Providers setup)
 // ==========================================

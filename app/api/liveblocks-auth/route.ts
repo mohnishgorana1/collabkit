@@ -1,3 +1,4 @@
+// /app/api/liveblocks-auth/route.ts
 import { Liveblocks } from "@liveblocks/node";
 import { getFullMongoUser } from "@/lib/helpers/auth"; // 💡 Naya function import kiya
 

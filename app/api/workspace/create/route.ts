@@ -1,3 +1,4 @@
+// /app/api/workspace/create/route.ts
 import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import mongoose from "mongoose";
@@ -9,7 +10,7 @@ import { z } from "zod";
 import { getMongoUser } from "@/lib/helpers/auth";
 import Channel from "@/models/channel.model";
 
-// Zod Schema (Jo pehle banaya tha)
+// Zod Schema 
 const createWorkspaceSchema = z.object({
   name: z
     .string()
@@ -45,7 +46,7 @@ export async function POST(req: Request) {
 
   try {
     const mongoUserId = await getMongoUser();
-    console.log("mongoUserId", mongoUserId);
+    // console.log("mongoUserId", mongoUserId);
 
     const body = await req.json();
     const validationResult = createWorkspaceSchema.safeParse(body);
@@ -70,7 +71,7 @@ export async function POST(req: Request) {
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/(^-|-$)+/g, "");
-    let slug = baseSlug || "workspace";
+    const slug = baseSlug || "workspace";
 
     // Generate Public ID (e.g., "v9xk2mpq") for URL
     const publicId = Math.random().toString(36).substring(2, 10).toLowerCase();
@@ -86,7 +87,6 @@ export async function POST(req: Request) {
     // ----------------------------------------------------------------------
 
     // STEP A: Create Workspace
-    // Note: Mongoose transactions require passing an array to .create() when using sessions
     const workspaceCreated = await Workspace.create(
       [
         {
@@ -107,16 +107,21 @@ export async function POST(req: Request) {
             defaultRole: "MEMBER",
             defaultTimezone: "UTC",
           },
+          stats: {
+            totalMembers: 1, // User creating it is the first member
+            totalChannels: 1, // Default #general channel
+            lastActiveAt: new Date(),
+          },
           isOnboardingComplete: false,
         },
       ],
       { session },
-    ); // ✅ Session pass kiya
+    );
 
     if (!workspaceCreated || workspaceCreated.length === 0) {
       throw new Error("Failed to create workspace");
     }
-    const newWorkspace = workspaceCreated[0]; // Get the created doc
+    const newWorkspace = workspaceCreated[0]; 
 
     // STEP B: Create Member
     const memberCreated = await WorkspaceMember.create(
@@ -152,8 +157,7 @@ export async function POST(req: Request) {
     if (!channelCreated || channelCreated.length === 0) {
       throw new Error("Failed to create default general channel");
     }
-    console.log("Default channel created:", channelCreated[0]);
-
+    // console.log("Default channel created:", channelCreated[0]);
 
     // STEP D: Update User
     const updatedUser = await User.findByIdAndUpdate(
@@ -163,7 +167,7 @@ export async function POST(req: Request) {
         lastActiveWorkspaceId: newWorkspace._id,
         $addToSet: { joinedWorkspaces: newWorkspace._id },
       },
-      { new: true, session }, // ✅ Session pass kiya
+      { new: true, session }, 
     );
 
     if (!updatedUser) {
@@ -171,10 +175,9 @@ export async function POST(req: Request) {
     }
     console.log("updatedUser", updatedUser);
 
-    // ----------------------------------------------------------------------
     // ✅ SAFE ZONE: COMMIT EVERYTHING
 
-    await session.commitTransaction(); // Database par permanently save karo
+    await session.commitTransaction(); 
 
     session.endSession();
 
@@ -189,7 +192,7 @@ export async function POST(req: Request) {
     );
   } catch (error: any) {
     // ❌ ERROR ZONE: ROLLBACK EVERYTHING
-    await session.abortTransaction(); // Agar kuchh bhi fail hua, toh pehle waale bhi delete kar do
+    await session.abortTransaction(); 
     session.endSession();
 
     console.error("❌ TRANSACTION ABORTED:", error.message);

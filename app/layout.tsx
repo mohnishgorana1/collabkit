@@ -1,3 +1,4 @@
+// /app/layout.tsx
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -27,11 +28,9 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
 
   let workspaceData;
-
   const fullUser = await getFullMongoUser();
   try {
     const userId = await getMongoUser();
-
     if (userId) {
       const fetchedData = await getUserDashboardData(userId);
       if (fetchedData) {
